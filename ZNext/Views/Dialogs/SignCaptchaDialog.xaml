@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="ZNext.Views.Dialogs.SignCaptchaDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dialogs="using:ZNext.ViewModels.Dialogs"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="确认签到"
+    PrimaryButtonText="确认签到"
+    CloseButtonText="取消"
+    DefaultButton="Primary"
+    PrimaryButtonStyle="{ThemeResource AccentButtonStyle}"
+    Style="{ThemeResource DefaultContentDialogStyle}"
+    d:DataContext="{d:DesignInstance Type=dialogs:SignCaptchaDialogViewModel}"
+    mc:Ignorable="d">
+
+    <Border Width="372"
+            Padding="0,0,0,8">
+        <StackPanel Spacing="14">
+            <StackPanel Spacing="4">
+                <TextBlock Text="完成人机验证"
+                           FontSize="20"
+                           FontWeight="SemiBold"/>
+                <TextBlock Text="浏览器完成验证后，将返回的 token 粘贴到这里。"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <Button Content="开始验证"
+                    HorizontalAlignment="Left"
+                    Command="{Binding OpenCaptchaCommand}"/>
+
+            <TextBox Header="验证码 token（支持 Base64 自动解码）"
+                     PlaceholderText="粘贴验证码 token"
+                     HorizontalAlignment="Stretch"
+                     Text="{Binding CaptchaInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Text="{Binding StatusText, Mode=OneWay}"
+                       Foreground="{Binding StatusBrush, Mode=OneWay}"
+                       TextWrapping="Wrap"/>
+        </StackPanel>
+    </Border>
+</ContentDialog>

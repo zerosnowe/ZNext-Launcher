@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="ZNext.Views.CreateTunnelSectionView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    SizeChanged="CreateTunnelSectionView_SizeChanged">
+    <Grid RowDefinitions="Auto,*">
+        <StackPanel Padding="20,20,20,12"
+                    Spacing="16">
+            <StackPanel.ChildrenTransitions>
+                <TransitionCollection>
+                    <EntranceThemeTransition FromVerticalOffset="50"/>
+                    <RepositionThemeTransition IsStaggeringEnabled="False"/>
+                </TransitionCollection>
+            </StackPanel.ChildrenTransitions>
+
+            <TextBlock Text="创建隧道" FontSize="28" FontWeight="SemiBold"/>
+
+            <Grid ColumnDefinitions="180,40,72,*,260" ColumnSpacing="10">
+                <ComboBox x:Name="CreateTunnelCountryComboBox"
+                          x:FieldModifier="public"
+                          Height="34"
+                          VerticalAlignment="Center"
+                          HorizontalAlignment="Stretch"
+                          SelectedIndex="0"
+                          SelectionChanged="CreateTunnelCountryComboBox_SelectionChanged">
+                    <x:String>全部国家/地区</x:String>
+                    <x:String>中国大陆</x:String>
+                    <x:String>港澳台地区</x:String>
+                    <x:String>海外</x:String>
+                    <x:String>其他</x:String>
+                </ComboBox>
+                <Button Grid.Column="1"
+                        Width="40"
+                        Height="34"
+                        Padding="0"
+                        VerticalAlignment="Center"
+                        ToolTipService.ToolTip="筛选">
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <ToggleMenuFlyoutItem Text="可建站"
+                                                  FontFamily="Microsoft YaHei UI"
+                                                  Language="zh-CN"
+                                                  Tag="CanWeb"
+                                                  Click="CreateTunnelFilterToggleMenuItem_Click"/>
+                            <ToggleMenuFlyoutItem Text="大流量"
+                                                  FontFamily="Microsoft YaHei UI"
+                                                  Language="zh-CN"
+                                                  Tag="HighBandwidth"
+                                                  Click="CreateTunnelFilterToggleMenuItem_Click"/>
+                            <ToggleMenuFlyoutItem Text="未过载"
+                                                  FontFamily="Microsoft YaHei UI"
+                                                  Language="zh-CN"
+                                                  Tag="NotOverloaded"
+                                                  Click="CreateTunnelFilterToggleMenuItem_Click"/>
+                            <ToggleMenuFlyoutItem Text="无权限"
+                                                  FontFamily="Microsoft YaHei UI"
+                                                  Language="zh-CN"
+                                                  IsChecked="True"
+                                                  Tag="IncludeNoPermission"
+                                                  Click="CreateTunnelFilterToggleMenuItem_Click"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                    <FontIcon Glyph="&#xE71C;"
+                              FontFamily="{ThemeResource AppSymbolFontFamily}"
+                              FontSize="14"/>
+                </Button>
+                <Button Grid.Column="2"
+                        Width="72"
+                        Height="34"
+                        Padding="0"
+                        VerticalAlignment="Center"
+                        Click="RefreshCreateTunnelButton_Click">
+                    <FontIcon Glyph="&#xE72C;"
+                              FontFamily="{ThemeResource AppSymbolFontFamily}"
+                              FontSize="13"/>
+                </Button>
+                <TextBox x:Name="CreateTunnelSearchBox"
+                         x:FieldModifier="public"
+                         Grid.Column="4"
+                         Width="260"
+                         Height="34"
+                         HorizontalAlignment="Right"
+                         VerticalAlignment="Center"
+                         PlaceholderText="搜索节点名称、地区、ID"
+                         TextChanged="CreateTunnelSearchBox_TextChanged"/>
+            </Grid>
+
+            <ProgressRing x:Name="CreateTunnelLoadingProgressBar"
+                          x:FieldModifier="public"
+                          IsActive="{Binding IsLoading}"
+                          Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+                          Width="24"
+                          Height="24"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"/>
+
+            <StackPanel x:Name="CreateTunnelErrorPlaceholder"
+                        x:FieldModifier="public"
+                        Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="10"
+                        Margin="0,18,0,6">
+                <Image Source="ms-appx:///Assets/wifi.png"
+                       Width="84"
+                       Height="84"
+                       Stretch="Uniform"/>
+                <TextBlock Text="无法连接到服务，请检查网络"
+                           FontSize="14"
+                           HorizontalAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                <Button Content="重试"
+                        Width="96"
+                        HorizontalAlignment="Center"
+                        Click="RetryCreateTunnelButton_Click"/>
+            </StackPanel>
+
+            <TextBlock x:Name="NoCreateTunnelNodesTextBlock"
+                       x:FieldModifier="public"
+                       Text="暂无可用节点"
+                       FontSize="16"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       HorizontalAlignment="Center"
+                       Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </StackPanel>
+
+        <GridView x:Name="CreateTunnelNodesGridView"
+                  x:FieldModifier="public"
+                  Grid.Row="1"
+                  Padding="20,0,20,20"
+                  ItemsSource="{Binding VisibleNodes}"
+                  SelectionMode="None"
+                  Visibility="{Binding HasVisibleNodes, Converter={StaticResource BooleanToVisibilityConverter}}"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                  ScrollViewer.HorizontalScrollMode="Disabled"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.VerticalScrollMode="Enabled">
+            <GridView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsWrapGrid Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </GridView.ItemsPanel>
+
+            <GridView.ItemContainerStyle>
+                <Style TargetType="GridViewItem">
+                    <Setter Property="Width" Value="260"/>
+                    <Setter Property="Height" Value="178"/>
+                    <Setter Property="Margin" Value="6"/>
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                </Style>
+            </GridView.ItemContainerStyle>
+
+            <GridView.ItemTemplate>
+                <DataTemplate>
+                    <Button Tag="{Binding}"
+                            IsEnabled="{Binding CanUse}"
+                            Click="CreateTunnelCard_Click"
+                            Padding="0"
+                            BorderThickness="0"
+                            Background="Transparent"
+                            Width="260"
+                            Height="178"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch">
+                        <Grid>
+                            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="14"
+                                    Opacity="{Binding CardOpacity}">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                        <TextBlock Text="{Binding NodeIdText}"
+                                                   Foreground="{ThemeResource SystemAccentColor}"
+                                                   FontWeight="SemiBold"/>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Name}"
+                                                   FontSize="15"
+                                                   FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding RegionText}"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                    </Grid>
+
+                                    <TextBlock Text="{Binding Description}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               TextWrapping="Wrap"
+                                               MaxLines="2"/>
+
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="{Binding ProtocolText}" FontSize="12"/>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding BandwidthText}"
+                                                   FontSize="12"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                    </Grid>
+
+                                    <StackPanel Spacing="4">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Text="节点负载" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding LoadText}" FontSize="12"/>
+                                        </Grid>
+                                        <ProgressBar Value="{Binding LoadPercent}"
+                                                     Maximum="100"
+                                                     Height="7"
+                                                     Foreground="{Binding LoadBarBrush}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#26EFB047"
+                                    BorderBrush="#CCEFB047"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Visibility="{Binding VipIndicatorVisibility}"
+                                    IsHitTestVisible="False"/>
+                            <Border Background="#26E56B86"
+                                    BorderBrush="#CCE56B86"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Visibility="{Binding OverloadIndicatorVisibility}"
+                                    IsHitTestVisible="False"/>
+                            <Border Background="#EFB047"
+                                    CornerRadius="6"
+                                    Padding="6,2"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Margin="0,8,8,0"
+                                    Visibility="{Binding VipIndicatorVisibility}"
+                                    IsHitTestVisible="False">
+                                <TextBlock Text="VIP"
+                                           Foreground="White"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"/>
+                            </Border>
+                            <Border Background="#E56B86"
+                                    CornerRadius="6"
+                                    Padding="6,2"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Margin="0,8,8,0"
+                                    Visibility="{Binding OverloadIndicatorVisibility}"
+                                    IsHitTestVisible="False">
+                                <TextBlock Text="过载"
+                                           Foreground="White"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"/>
+                            </Border>
+                        </Grid>
+                    </Button>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+    </Grid>
+</UserControl>

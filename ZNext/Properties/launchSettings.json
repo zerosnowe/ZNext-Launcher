@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ZNext Launcher (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "ZNext Launcher (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

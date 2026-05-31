@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Application
+    x:Class="ZNext.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:ZNext.Converters">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <FontFamily x:Key="AppSymbolFontFamily">Segoe Fluent Icons</FontFamily>
+            <FontFamily x:Key="SymbolThemeFontFamily">Segoe Fluent Icons</FontFamily>
+            
+            <converters:BooleanToColorConverter x:Key="BooleanToColorConverter"/>
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:BytesToMBConverter x:Key="BytesToMBConverter"/>
+            <converters:LoadToColorConverter x:Key="LoadToColorConverter"/>
+            <converters:RegionCodeToTextConverter x:Key="RegionCodeToTextConverter"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
