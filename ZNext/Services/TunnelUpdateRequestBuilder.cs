@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text.Json;
+using ZNext.Infrastructure.Serialization;
 
 namespace ZNext.Services;
 
@@ -44,7 +45,7 @@ internal sealed class TunnelUpdateRequestBuilder
 			localIp = localIp,
 			localPort = input.LocalPort,
 			remotePort = isHttpLike ? 0 : input.RemotePort,
-			domain = isHttpLike ? JsonSerializer.Serialize(domains) : string.Empty,
+			domain = isHttpLike ? JsonSerializer.Serialize(domains, AppJsonSerializerContext.Default.ListString) : string.Empty,
 			location = string.Empty,
 			accessKey = string.Empty,
 			httpPlugin = TunnelProtocolRules.GetHttpPlugin(protocol),

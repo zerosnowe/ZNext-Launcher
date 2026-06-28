@@ -1,6 +1,6 @@
 namespace ZNext.Infrastructure.Settings;
 
-internal interface IAppSettingsStore
+public interface IAppSettingsStore
 {
 	string? GetString(string key);
 

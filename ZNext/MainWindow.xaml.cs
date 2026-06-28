@@ -2,14 +2,19 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.Web.WebView2.Core;
 using WinRT.Interop;
 using Windows.ApplicationModel;
+using Windows.Storage.Streams;
 using ZNext.Infrastructure.Settings;
 using ZNext.Navigation;
 using ZNext.Services;
@@ -33,6 +38,8 @@ public sealed partial class MainWindow : Window
 	private readonly TunnelService _tunnelService;
 
 	private readonly CreateProxyService _createProxyService;
+
+	private readonly AccountCenterService _accountCenterService;
 
 	private readonly UserSessionService _userSessionService;
 
@@ -238,10 +245,7 @@ public sealed partial class MainWindow : Window
 		() => _homePanel?.HomeBannerAvatarPicture,
 		() => _homePanel?.HomeBannerAvatarFallback,
 		() => _homePanel?.ImportantAnnouncementBodyRichTextBlock,
-		() => _homePanel?.LoginButton,
-		() => _homePanel?.LogoutButton,
-		() => TitleBarFlyoutUsernameText,
-		() => TitleBarFlyoutEmailText,
+		() => TitleBarProfileControl,
 		() => StartupLoadingOverlay,
 		() => StartupLoadingRing,
 		() => StartupLoadingIconImage);
@@ -256,6 +260,7 @@ public sealed partial class MainWindow : Window
 		() => LoginDialogFlow,
 		UserSessionOperationCoordinator,
 		HomeSectionCoordinator,
+		_userDialogService,
 		AnnouncementInteractionCoordinator,
 		_pageLoadStateCoordinator,
 		HomeActivationCoordinator,
@@ -323,9 +328,12 @@ public sealed partial class MainWindow : Window
 		_securitySettingsCoordinator,
 		_autoStartSettingsCoordinator,
 		_userSessionService,
+		_accountCenterService,
+		_signCaptchaDialogService,
 		_tunnelsViewModel,
 		_pageLoadStateCoordinator,
 		_frpcSettingsService,
+		_frpcManagerService,
 		_appVersionService,
 		_userDialogService,
 		_userActionCoordinator,
@@ -338,6 +346,8 @@ public sealed partial class MainWindow : Window
 		GetOwnerHwnd,
 		forceReload => PageSectionLoadCoordinator.LoadTunnelsAsync(forceReload),
 		ThemeApplicationCoordinator.Apply,
+		ApplyBackdropMaterial,
+		ApplyCustomBackground,
 		ShowTopSuccessToast,
 		RefreshTitleBarUserAvatar,
 		base.DispatcherQueue);
@@ -460,7 +470,12 @@ public sealed partial class MainWindow : Window
 
 	private TextBlock? AvatarStatusText => _settingsPanel?.AvatarStatusText;
 
+	private const string CustomBackgroundVideoHostName = "znext-background.local";
+	private const string CustomBackgroundBlankHtml = "<!doctype html><html><head><meta charset=\"utf-8\"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;}</style></head><body></body></html>";
+
 	private bool _hasExecutedStartupTunnelAutoRun;
+	private bool _isCustomBackgroundWebViewInitialized;
+	private int _customBackgroundRequestVersion;
 
 	public MainWindow(string? startupToken = null)
 	{
@@ -499,15 +514,18 @@ public sealed partial class MainWindow : Window
 			_nodeService = new NodeService(_apiHttpService);
 			_tunnelService = new TunnelService(_apiHttpService);
 			_createProxyService = new CreateProxyService(_apiHttpService);
+			_accountCenterService = new AccountCenterService(_apiHttpService);
 			_userSessionService = new UserSessionService(_authService, _announcementService, _userInfoService, _systemStatusService, _nodeService, _tunnelService, _createProxyService);
 			_tunnelActionService = new TunnelActionService(_tunnelService, _userSessionService);
 			_tunnelLinkCopyService = new TunnelLinkCopyService(_tunnelService, _userSessionService, _clipboardService);
 			InitializeComponent();
+			ConfigureNavigationSettingsItem();
 			InitializeViewModels();
 			return;
 		}
 		ApplyPlatformSymbolFont();
 		InitializeComponent();
+		ConfigureNavigationSettingsItem();
 		InitializeViewModels();
 		_ = ShellNavigationCoordinator;
 		WindowChromeCoordinator.Configure(WindowLifecycleCoordinator.HandleAppWindowClosing);
@@ -526,6 +544,7 @@ public sealed partial class MainWindow : Window
 		_nodeService = new NodeService(_apiHttpService);
 		_tunnelService = new TunnelService(_apiHttpService);
 		_createProxyService = new CreateProxyService(_apiHttpService);
+		_accountCenterService = new AccountCenterService(_apiHttpService);
 		_userSessionService = new UserSessionService(_authService, _announcementService, _userInfoService, _systemStatusService, _nodeService, _tunnelService, _createProxyService);
 		_tunnelActionService = new TunnelActionService(_tunnelService, _userSessionService);
 		_tunnelLinkCopyService = new TunnelLinkCopyService(_tunnelService, _userSessionService, _clipboardService);
@@ -536,6 +555,7 @@ public sealed partial class MainWindow : Window
 		WindowLifecycleCoordinator.StartNotifications();
 		HomeSectionCoordinator.EnsureStartupLoadingIconVisible();
 		ShellNavigationCoordinator.Select("Home");
+		RefreshTitleBarUserAvatar();
 		UpdateTitleBarBackButton("Home");
 	}
 
@@ -560,11 +580,8 @@ public sealed partial class MainWindow : Window
 		view.AnnouncementRequested += HomeBannerAnnouncementButton_Click;
 		view.SignInRequested += HomeBannerSignInButton_Click;
 		view.CloseImportantAnnouncementRequested += CloseImportantAnnouncementButton_Click;
-		view.LoginRequested += LoginButton_Click;
-		view.LogoutRequested += LogoutButton_Click;
 		_homePanel = view;
 		HomeSectionCoordinator.RefreshHomeBannerAvatar();
-		HomeSectionCoordinator.UpdateButtonVisibility(_userSessionService.IsSignedIn);
 		return view;
 	}
 
@@ -663,13 +680,24 @@ public sealed partial class MainWindow : Window
 		view.AutoStartToggled += async (sender, _) => await SettingsSectionCoordinator.HandleAutoStartToggledAsync(sender);
 		view.AutoStartTunnelsToggled += async (sender, _) => await SettingsSectionCoordinator.HandleAutoStartTunnelsToggledAsync(sender);
 		view.UploadAvatarRequested += async (_, _) => await SettingsSectionCoordinator.HandleUploadAvatarAsync();
+		view.ClearAvatarRequested += async (_, _) => await SettingsSectionCoordinator.HandleClearAvatarAsync();
+		view.SelectCustomBackgroundRequested += async (_, _) => await SettingsSectionCoordinator.HandleSelectCustomBackgroundAsync();
+		view.ClearCustomBackgroundRequested += (_, _) => SettingsSectionCoordinator.HandleClearCustomBackground();
 		view.FrpcInstallRequested += async (_, _) => await SettingsSectionCoordinator.HandleFrpcInstallAsync();
 		view.FrpcOpenDirectoryRequested += async (_, _) => await SettingsSectionCoordinator.HandleOpenFrpcDirectoryAsync();
+		view.LaunchArgsRequested += async (_, _) => await SettingsSectionCoordinator.HandleLaunchArgsAsync();
 		view.SecurityPasswordToggled += async (sender, _) => await SettingsSectionCoordinator.HandleSecurityPasswordToggledAsync(sender);
 		view.SetSecurityPasswordRequested += async (_, _) => await SettingsSectionCoordinator.HandleSetSecurityPasswordAsync();
 		view.FetchUpdateRequested += async (_, _) => await SettingsSectionCoordinator.HandleFetchUpdateAsync();
+		view.UserCenterActionRequested += async (_, action) => await SettingsSectionCoordinator.HandleUserCenterActionAsync(action);
+		view.CopyAccessTokenRequested += async (_, _) => await SettingsSectionCoordinator.HandleCopyAccessTokenAsync();
+		view.LogoutRequested += HandleLogoutRequested;
+		view.PageControlsRegistered += (_, _) => SettingsSectionCoordinator.RefreshUi();
+		view.NavigationStateChanged += (_, _) => UpdateTitleBarBackButton(ShellNavigationCoordinator.CurrentKey);
 
 		_settingsPanel = view;
+		view.SetHomeViewModel(_homeViewModel);
+		view.SetAvatarServices(_avatarService);
 		RefreshSettingsSectionUi();
 		return view;
 	}
@@ -682,6 +710,73 @@ public sealed partial class MainWindow : Window
 	private void RefreshConsoleSectionUi()
 	{
 		ConsoleSectionCoordinator.RefreshUi();
+	}
+
+	private void ConfigureNavigationSettingsItem()
+	{
+		if (NavView.SettingsItem is not NavigationViewItem settingsItem)
+		{
+			return;
+		}
+
+		settingsItem.Loaded -= NavigationSettingsItem_Loaded;
+		settingsItem.Loaded += NavigationSettingsItem_Loaded;
+		ApplyNavigationSettingsItemLocalization(settingsItem);
+	}
+
+	private void ApplyNavigationSettingsItemLocalization(NavigationViewItem settingsItem)
+	{
+		settingsItem.Content = "设置";
+		settingsItem.Tag = "Settings";
+		settingsItem.Icon = new FontIcon
+		{
+			Glyph = "\uE713",
+			FontFamily = GetSymbolFontFamily()
+		};
+		ToolTipService.SetToolTip(settingsItem, "设置");
+		Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(settingsItem, "设置");
+		Microsoft.UI.Xaml.Automation.AutomationProperties.SetHelpText(settingsItem, "设置");
+		settingsItem.ApplyTemplate();
+		LocalizeSettingsTextBlocks(settingsItem);
+	}
+
+	private void NavigationSettingsItem_Loaded(object sender, RoutedEventArgs e)
+	{
+		if (sender is NavigationViewItem settingsItem)
+		{
+			ApplyNavigationSettingsItemLocalization(settingsItem);
+			_ = DispatcherQueue.TryEnqueue(() => ApplyNavigationSettingsItemLocalization(settingsItem));
+		}
+	}
+
+	private void NavView_Loaded(object sender, RoutedEventArgs e)
+	{
+		ConfigureNavigationSettingsItem();
+		_ = DispatcherQueue.TryEnqueue(ConfigureNavigationSettingsItem);
+	}
+
+	private static void LocalizeSettingsTextBlocks(DependencyObject root)
+	{
+		int childCount = VisualTreeHelper.GetChildrenCount(root);
+		for (int i = 0; i < childCount; i++)
+		{
+			DependencyObject child = VisualTreeHelper.GetChild(root, i);
+			if (child is TextBlock textBlock && string.Equals(textBlock.Text, "Settings", StringComparison.OrdinalIgnoreCase))
+			{
+				textBlock.Text = "设置";
+			}
+
+			LocalizeSettingsTextBlocks(child);
+		}
+	}
+
+	private static FontFamily GetSymbolFontFamily()
+	{
+		return Application.Current?.Resources != null
+			&& Application.Current.Resources.TryGetValue("AppSymbolFontFamily", out object resource)
+			&& resource is FontFamily fontFamily
+				? fontFamily
+				: new FontFamily("Segoe Fluent Icons");
 	}
 
 	private static void ApplyPlatformSymbolFont()
@@ -744,17 +839,12 @@ public sealed partial class MainWindow : Window
 		AnnouncementInteractionCoordinator.RefreshView();
 	}
 
-	private async void LoginButton_Click(object sender, RoutedEventArgs e)
-	{
-		await HomeInteractionCoordinator.LoginAsync();
-	}
-
 	private async void SignInButton_Click(object sender, RoutedEventArgs e)
 	{
 		await HomeInteractionCoordinator.SignInAsync();
 	}
 
-	private async void LogoutButton_Click(object sender, RoutedEventArgs e)
+	private async void HandleLogoutRequested(object sender, RoutedEventArgs e)
 	{
 		await HomeInteractionCoordinator.LogoutAsync();
 	}
@@ -895,33 +985,35 @@ public sealed partial class MainWindow : Window
 	private void RefreshTitleBarUserAvatar()
 	{
 		string? avatarPath = _avatarService.LoadAvatarPath();
-		_avatarVisualController.RefreshTitleBarAvatar(
-			TitleBarAvatarPicture,
-			TitleBarUserGlyph,
-			TitleBarFlyoutAvatarPicture,
-			TitleBarFlyoutUserGlyphHost,
-			AvatarStatusText,
-			avatarPath);
+		TitleBarProfileControl.RefreshAvatar(avatarPath, AvatarStatusText);
+		_settingsPanel?.RefreshSettingsAvatar();
 		HomeSectionCoordinator.RefreshHomeBannerAvatar();
 	}
 
 	private void TitleBarBackButton_Click(object sender, RoutedEventArgs e)
 	{
-		if (string.Equals(_shellNavigationCoordinator?.CurrentKey, "Announcement", StringComparison.OrdinalIgnoreCase))
+		if (string.Equals(_shellNavigationCoordinator?.CurrentKey, "Settings", StringComparison.OrdinalIgnoreCase)
+			&& _settingsPanel?.TryGoBack() == true)
 		{
-			ShellNavigationCoordinator.NavigateTo("Home");
+			return;
 		}
-		else
-		{
-			ShellNavigationCoordinator.Select("Home");
-		}
+
+		ShellNavigationCoordinator.GoBack();
 	}
 
-	private void TitleBarLogoutMenuItem_Click(object sender, RoutedEventArgs e)
+	private void TitleBarProfileControl_LogoutRequested(object sender, RoutedEventArgs e)
 	{
 		if (_userSessionService.IsSignedIn)
 		{
-			LogoutButton_Click(sender, e);
+			HandleLogoutRequested(sender, e);
+		}
+	}
+
+	private async void TitleBarProfileControl_LoginRequested(object sender, RoutedEventArgs e)
+	{
+		if (!_userSessionService.IsSignedIn)
+		{
+			await HomeInteractionCoordinator.LoginAsync();
 		}
 	}
 
@@ -939,7 +1031,14 @@ public sealed partial class MainWindow : Window
 
 	private void UpdateTitleBarBackButton(string? currentTag)
 	{
-		WindowChromeCoordinator.UpdateBackButton(currentTag);
+		WindowChromeCoordinator.UpdateBackButton(CanNavigateBack());
+	}
+
+	private bool CanNavigateBack()
+	{
+		return ShellNavigationCoordinator.CanGoBack
+			|| (string.Equals(_shellNavigationCoordinator?.CurrentKey, "Settings", StringComparison.OrdinalIgnoreCase)
+				&& _settingsPanel?.CanGoBack == true);
 	}
 
 	private void RequestExitFromTray()
@@ -949,7 +1048,9 @@ public sealed partial class MainWindow : Window
 
 	private void PrepareSectionHost(string key)
 	{
-		bool useDirectHost = string.Equals(key, "CreateTunnel", StringComparison.OrdinalIgnoreCase);
+		bool useDirectHost =
+			string.Equals(key, "CreateTunnel", StringComparison.OrdinalIgnoreCase)
+			|| string.Equals(key, "Settings", StringComparison.OrdinalIgnoreCase);
 		Panel targetHost = useDirectHost ? DirectSectionFrameHost : ScrolledSectionFrameHost;
 
 		if (SectionFrame.Parent is Panel currentHost && !ReferenceEquals(currentHost, targetHost))
@@ -966,6 +1067,150 @@ public sealed partial class MainWindow : Window
 	private void UpdateTitleBarVisuals()
 	{
 		WindowChromeCoordinator.UpdateVisuals();
+	}
+
+	private void ApplyBackdropMaterial(string material)
+	{
+		SystemBackdrop = SettingsViewModel.NormalizeBackdropMaterial(material) == "Mica"
+			? new MicaBackdrop()
+			: new DesktopAcrylicBackdrop();
+		UpdateTitleBarVisuals();
+	}
+
+	private async void ApplyCustomBackground(bool isEnabled, string backgroundPath)
+	{
+		int requestVersion = ++_customBackgroundRequestVersion;
+		if (!isEnabled || string.IsNullOrWhiteSpace(backgroundPath) || !File.Exists(backgroundPath))
+		{
+			ClearCustomBackground();
+			return;
+		}
+
+		try
+		{
+			if (IsCustomBackgroundVideo(backgroundPath))
+			{
+				await ApplyCustomBackgroundVideoAsync(backgroundPath, requestVersion);
+				return;
+			}
+
+			await ApplyCustomBackgroundImageAsync(backgroundPath, requestVersion);
+		}
+		catch (Exception ex)
+		{
+			Debug.WriteLine("Apply custom background failed: " + ex.Message);
+			if (requestVersion == _customBackgroundRequestVersion)
+			{
+				ClearCustomBackground();
+			}
+		}
+	}
+
+	private async Task ApplyCustomBackgroundImageAsync(string imagePath, int requestVersion)
+	{
+		StopCustomBackgroundVideo();
+
+		using FileStream fileStream = File.Open(imagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+		using IRandomAccessStream randomAccessStream = fileStream.AsRandomAccessStream();
+
+		BitmapImage bitmapImage = new BitmapImage();
+		await bitmapImage.SetSourceAsync(randomAccessStream);
+
+		if (requestVersion != _customBackgroundRequestVersion)
+		{
+			return;
+		}
+
+		RootGrid.Background = new ImageBrush
+		{
+			ImageSource = bitmapImage,
+			Stretch = Stretch.UniformToFill
+		};
+		CustomBackgroundMask.Visibility = Visibility.Visible;
+	}
+
+	private async Task ApplyCustomBackgroundVideoAsync(string videoPath, int requestVersion)
+	{
+		RootGrid.Background = null;
+		await EnsureCustomBackgroundWebViewInitializedAsync();
+
+		if (requestVersion != _customBackgroundRequestVersion)
+		{
+			return;
+		}
+
+		string videoSource = CreateCustomBackgroundVideoSource(videoPath);
+		CustomBackgroundWebView.NavigateToString(BuildCustomBackgroundVideoHtml(videoSource));
+		CustomBackgroundWebView.Visibility = Visibility.Visible;
+		CustomBackgroundMask.Visibility = Visibility.Visible;
+	}
+
+	private void ClearCustomBackground()
+	{
+		RootGrid.Background = null;
+		StopCustomBackgroundVideo();
+		CustomBackgroundMask.Visibility = Visibility.Collapsed;
+	}
+
+	private async Task EnsureCustomBackgroundWebViewInitializedAsync()
+	{
+		if (_isCustomBackgroundWebViewInitialized)
+		{
+			return;
+		}
+
+		await CustomBackgroundWebView.EnsureCoreWebView2Async();
+		_isCustomBackgroundWebViewInitialized = true;
+	}
+
+	private string CreateCustomBackgroundVideoSource(string videoPath)
+	{
+		string folderPath = Path.GetDirectoryName(videoPath)
+			?? throw new InvalidOperationException("Custom background video folder is unavailable.");
+		string fileName = Path.GetFileName(videoPath);
+		CustomBackgroundWebView.CoreWebView2.SetVirtualHostNameToFolderMapping(
+			CustomBackgroundVideoHostName,
+			folderPath,
+			CoreWebView2HostResourceAccessKind.Allow);
+
+		return $"https://{CustomBackgroundVideoHostName}/{Uri.EscapeDataString(fileName)}";
+	}
+
+	private void StopCustomBackgroundVideo()
+	{
+		CustomBackgroundWebView.Visibility = Visibility.Collapsed;
+		try
+		{
+			CustomBackgroundWebView.CoreWebView2?.Stop();
+			if (_isCustomBackgroundWebViewInitialized)
+			{
+				CustomBackgroundWebView.NavigateToString(CustomBackgroundBlankHtml);
+			}
+		}
+		catch (Exception ex)
+		{
+			Debug.WriteLine("Stop custom background video failed: " + ex.Message);
+		}
+	}
+
+	private static bool IsCustomBackgroundVideo(string backgroundPath)
+	{
+		return string.Equals(Path.GetExtension(backgroundPath), ".mp4", StringComparison.OrdinalIgnoreCase);
+	}
+
+	private static string BuildCustomBackgroundVideoHtml(string videoSource)
+	{
+		string encodedSource = WebUtility.HtmlEncode(videoSource);
+		return "<!doctype html>"
+			+ "<html><head><meta charset=\"utf-8\">"
+			+ "<style>"
+			+ "html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;}"
+			+ "video{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;background:#000;pointer-events:none;}"
+			+ "</style></head>"
+			+ "<body>"
+			+ $"<video id=\"backgroundVideo\" src=\"{encodedSource}\" autoplay muted loop playsinline preload=\"auto\"></video>"
+			+ "<script>const video=document.getElementById('backgroundVideo');video.muted=true;video.play().catch(()=>{});</script>"
+			+ "</body></html>";
 	}
 
 }

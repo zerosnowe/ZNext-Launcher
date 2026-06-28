@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Windows.Storage;
+using ZNext.Infrastructure.Serialization;
 
 namespace ZNext.Services
 {
@@ -61,7 +62,7 @@ namespace ZNext.Services
                     return null;
                 }
 
-                var cache = JsonSerializer.Deserialize<UserInfoCacheData>(json, JsonOptions);
+                var cache = JsonSerializer.Deserialize(json, AppJsonSerializerContext.Default.UserInfoCacheData);
                 return cache?.UserInfo;
             }
             catch (Exception ex)
@@ -81,7 +82,7 @@ namespace ZNext.Services
                     UserInfo = userInfo
                 };
 
-                var json = JsonSerializer.Serialize(cache);
+                var json = JsonSerializer.Serialize(cache, AppJsonSerializerContext.Default.UserInfoCacheData);
                 var file = await ApplicationData.Current.LocalFolder.CreateFileAsync(
                     UserInfoCacheFileName,
                     CreationCollisionOption.ReplaceExisting);
@@ -136,7 +137,7 @@ namespace ZNext.Services
                     };
                 }
 
-                var apiResponse = JsonSerializer.Deserialize<UserInfoApiResponse>(responseContent, JsonOptions);
+                var apiResponse = JsonSerializer.Deserialize(responseContent, AppJsonSerializerContext.Default.UserInfoApiResponse);
                 if (apiResponse == null)
                 {
                     return new UserInfoResult
@@ -227,7 +228,9 @@ namespace ZNext.Services
                     };
                 }
 
-                var payload = JsonSerializer.Serialize(new { captchaToken = normalizedToken });
+                var payload = JsonSerializer.Serialize(
+                    new CaptchaTokenRequest { captchaToken = normalizedToken },
+                    AppJsonSerializerContext.Default.CaptchaTokenRequest);
                 using var content = new StringContent(payload, Encoding.UTF8, "application/json");
                 using var response = await _httpService.PostAsync(SignApiUrl, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
@@ -242,8 +245,7 @@ namespace ZNext.Services
                     };
                 }
 
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var apiResponse = JsonSerializer.Deserialize<CommonApiResponse>(responseContent, options);
+                var apiResponse = JsonSerializer.Deserialize(responseContent, AppJsonSerializerContext.Default.CommonApiResponse);
                 if (apiResponse == null)
                 {
                     return new SignResult

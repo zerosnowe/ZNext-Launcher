@@ -4,7 +4,7 @@ using System;
 
 namespace ZNext.Converters
 {
-    public class LoadToColorConverter : IValueConverter
+    public partial class LoadToColorConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

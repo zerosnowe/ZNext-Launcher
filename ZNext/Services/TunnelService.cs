@@ -8,6 +8,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using WinRT;
+using ZNext.Infrastructure.Serialization;
 
 namespace ZNext.Services
 {
@@ -323,7 +325,9 @@ namespace ZNext.Services
 
             try
             {
-                var payload = JsonSerializer.Serialize(new { proxyId });
+                var payload = JsonSerializer.Serialize(
+                    new ProxyIdRequest { proxyId = proxyId },
+                    AppJsonSerializerContext.Default.ProxyIdRequest);
                 // 某些入口可能被 WAF 拦截(HTML 403)，按顺序切换端点重试。
                 string[] endpoints =
                 {
@@ -384,7 +388,9 @@ namespace ZNext.Services
 
             try
             {
-                var payload = JsonSerializer.Serialize(new { proxyId, isDisabled });
+                var payload = JsonSerializer.Serialize(
+                    new ProxyToggleRequest { proxyId = proxyId, isDisabled = isDisabled },
+                    AppJsonSerializerContext.Default.ProxyToggleRequest);
                 var actionName = isDisabled ? "禁用隧道" : "启用隧道";
                 return await PostActionWithFallbackAsync(
                     actionName,
@@ -416,7 +422,7 @@ namespace ZNext.Services
 
             try
             {
-                var payload = JsonSerializer.Serialize(request);
+                var payload = JsonSerializer.Serialize(request, AppJsonSerializerContext.Default.TunnelUpdateRequest);
                 using var content = new StringContent(payload, Encoding.UTF8, "application/json");
                 using var response = await _httpService.PostAsync(ProxyUpdateApiUrl, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
@@ -446,7 +452,9 @@ namespace ZNext.Services
 
             try
             {
-                var payload = JsonSerializer.Serialize(new { proxyId });
+                var payload = JsonSerializer.Serialize(
+                    new ProxyIdRequest { proxyId = proxyId },
+                    AppJsonSerializerContext.Default.ProxyIdRequest);
                 using var content = new StringContent(payload, Encoding.UTF8, "application/json");
                 using var response = await _httpService.PostAsync(ProxyDeleteApiUrl, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
@@ -640,7 +648,10 @@ namespace ZNext.Services
         {
             try
             {
-                return JsonSerializer.Deserialize<List<TunnelNodeInfo>>(nodesElement.GetRawText(), options) ?? new List<TunnelNodeInfo>();
+                return JsonSerializer.Deserialize(
+                    nodesElement.GetRawText(),
+                    AppJsonSerializerContext.Default.ListTunnelNodeInfo)
+                    ?? new List<TunnelNodeInfo>();
             }
             catch
             {
@@ -668,7 +679,10 @@ namespace ZNext.Services
         {
             try
             {
-                return JsonSerializer.Deserialize<List<TunnelInfo>>(tunnelsElement.GetRawText(), options) ?? new List<TunnelInfo>();
+                return JsonSerializer.Deserialize(
+                    tunnelsElement.GetRawText(),
+                    AppJsonSerializerContext.Default.ListTunnelInfo)
+                    ?? new List<TunnelInfo>();
             }
             catch
             {
@@ -1128,7 +1142,8 @@ namespace ZNext.Services
         }
     }
 
-    public class TunnelInfo
+    [GeneratedBindableCustomProperty]
+    public partial class TunnelInfo
     {
         public int proxyId { get; set; }
         public string proxyName { get; set; } = string.Empty;

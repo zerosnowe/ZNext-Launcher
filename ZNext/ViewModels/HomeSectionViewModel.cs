@@ -1,11 +1,13 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
+using WinRT;
 using ZNext.Services;
 
 namespace ZNext.ViewModels;
 
-internal sealed class HomeSectionViewModel : ObservableObject
+[GeneratedBindableCustomProperty]
+public sealed partial class HomeSectionViewModel : ObservableObject
 {
 	private static readonly SolidColorBrush RealnameOkBackgroundBrush = new(Color.FromArgb(255, 220, 252, 231));
 	private static readonly SolidColorBrush RealnameOkForegroundBrush = new(Color.FromArgb(255, 22, 101, 52));

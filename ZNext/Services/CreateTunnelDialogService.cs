@@ -164,6 +164,30 @@ internal sealed class CreateTunnelDialogService
 		{
 			PlaceholderText = "HTTPS 可填：SSL 证书密钥路径（如 C:\\certs\\privkey.pem）"
 		};
+		RadioButton tcpTransportRadio = new RadioButton
+		{
+			Content = "TCP（常规）",
+			IsChecked = true,
+			GroupName = "CreateTunnelTransportProtocol"
+		};
+		RadioButton quicTransportRadio = new RadioButton
+		{
+			Content = "QUIC（部分场景可优化/延迟）",
+			GroupName = "CreateTunnelTransportProtocol"
+		};
+		ComboBox proxyProtocolBox = CreateProxyProtocolBox();
+		ToggleSwitch encryptionSwitch = new ToggleSwitch
+		{
+			OnContent = "启用",
+			OffContent = "关闭",
+			IsOn = false
+		};
+		ToggleSwitch compressionSwitch = new ToggleSwitch
+		{
+			OnContent = "启用",
+			OffContent = "关闭",
+			IsOn = false
+		};
 		TextBlock errorText = new TextBlock
 		{
 			Foreground = ErrorBrush,
@@ -213,6 +237,12 @@ internal sealed class CreateTunnelDialogService
 		root.Children.Add(sslCertPathBox);
 		root.Children.Add(sslKeyPathLabel);
 		root.Children.Add(sslKeyPathBox);
+		root.Children.Add(CreateAdvancedConfigurationExpander(
+			tcpTransportRadio,
+			quicTransportRadio,
+			proxyProtocolBox,
+			encryptionSwitch,
+			compressionSwitch));
 		root.Children.Add(errorText);
 
 		CreateTunnelForm form = new CreateTunnelForm(
@@ -232,7 +262,12 @@ internal sealed class CreateTunnelDialogService
 			sslCertPathLabel,
 			sslCertPathBox,
 			sslKeyPathLabel,
-			sslKeyPathBox);
+			sslKeyPathBox,
+			tcpTransportRadio,
+			quicTransportRadio,
+			proxyProtocolBox,
+			encryptionSwitch,
+			compressionSwitch);
 
 		form.UpdateProtocolFields();
 		protocolBox.SelectionChanged += (_, _) => form.UpdateProtocolFields();
@@ -252,6 +287,176 @@ internal sealed class CreateTunnelDialogService
 		protocolBox.SelectedIndex = protocolBox.Items.Count > 0 ? 0 : -1;
 		TrySelectProtocol(protocolBox, "TCP");
 		return protocolBox;
+	}
+
+	private static ComboBox CreateProxyProtocolBox()
+	{
+		ComboBox comboBox = new ComboBox
+		{
+			MinWidth = 112,
+			SelectedIndex = 0
+		};
+		comboBox.Items.Add(new ComboBoxItem { Content = "不启用", Tag = string.Empty });
+		comboBox.Items.Add(new ComboBoxItem { Content = "V1", Tag = "v1" });
+		comboBox.Items.Add(new ComboBoxItem { Content = "V2", Tag = "v2" });
+		return comboBox;
+	}
+
+	private static Expander CreateAdvancedConfigurationExpander(
+		RadioButton tcpTransportRadio,
+		RadioButton quicTransportRadio,
+		ComboBox proxyProtocolBox,
+		ToggleSwitch encryptionSwitch,
+		ToggleSwitch compressionSwitch)
+	{
+		StackPanel advancedRoot = new StackPanel { Spacing = 12 };
+		advancedRoot.Children.Add(new TextBlock
+		{
+			Text = "提示：仅推荐技术用户使用，一般用户请勿随意填写。请确保您的配置正确，否则隧道可能无法启动。",
+			Foreground = SecondaryTextBrush,
+			TextWrapping = TextWrapping.Wrap
+		});
+		advancedRoot.Children.Add(CreateTransportProtocolSelector(tcpTransportRadio, quicTransportRadio));
+		advancedRoot.Children.Add(CreateProxyProtocolRow(proxyProtocolBox));
+		advancedRoot.Children.Add(CreateOtherOptionsRow(encryptionSwitch, compressionSwitch));
+
+		Expander expander = new Expander
+		{
+			Header = "高级配置",
+			IsExpanded = false,
+			Content = advancedRoot,
+			HorizontalAlignment = HorizontalAlignment.Stretch
+		};
+
+		bool tipShown = false;
+		expander.RegisterPropertyChangedCallback(Expander.IsExpandedProperty, (_, _) =>
+		{
+			if (!expander.IsExpanded || tipShown)
+			{
+				return;
+			}
+
+			tipShown = true;
+			_ = expander.DispatcherQueue.TryEnqueue(() => ShowAdvancedConfigurationTip(expander));
+		});
+
+		return expander;
+	}
+
+	private static UIElement CreateTransportProtocolSelector(RadioButton tcpTransportRadio, RadioButton quicTransportRadio)
+	{
+		StackPanel choices = new StackPanel
+		{
+			Orientation = Orientation.Horizontal,
+			Spacing = 12
+		};
+		choices.Children.Add(tcpTransportRadio);
+		choices.Children.Add(quicTransportRadio);
+
+		Border choiceContainer = new Border
+		{
+			BorderBrush = new SolidColorBrush(Color.FromArgb(255, 209, 213, 219)),
+			BorderThickness = new Thickness(1),
+			CornerRadius = new CornerRadius(6),
+			Padding = new Thickness(10, 6, 10, 6),
+			Child = choices
+		};
+
+		return CreateAdvancedRow("传输协议", choiceContainer);
+	}
+
+	private static UIElement CreateProxyProtocolRow(ComboBox proxyProtocolBox)
+	{
+		StackPanel rowContent = new StackPanel
+		{
+			Orientation = Orientation.Horizontal,
+			Spacing = 10,
+			VerticalAlignment = VerticalAlignment.Center
+		};
+		rowContent.Children.Add(proxyProtocolBox);
+		return CreateAdvancedRow("Proxy Protocol", rowContent);
+	}
+
+	private static UIElement CreateOtherOptionsRow(ToggleSwitch encryptionSwitch, ToggleSwitch compressionSwitch)
+	{
+		StackPanel rowContent = new StackPanel
+		{
+			Orientation = Orientation.Horizontal,
+			Spacing = 16
+		};
+		rowContent.Children.Add(CreateSwitchWithLabel(encryptionSwitch, "启用加密"));
+		rowContent.Children.Add(CreateSwitchWithLabel(compressionSwitch, "启用压缩"));
+		return CreateAdvancedRow("其他选项", rowContent);
+	}
+
+	private static UIElement CreateSwitchWithLabel(ToggleSwitch toggleSwitch, string label)
+	{
+		StackPanel panel = new StackPanel
+		{
+			Orientation = Orientation.Horizontal,
+			Spacing = 6,
+			VerticalAlignment = VerticalAlignment.Center
+		};
+		panel.Children.Add(toggleSwitch);
+		panel.Children.Add(new TextBlock
+		{
+			Text = label,
+			VerticalAlignment = VerticalAlignment.Center
+		});
+		return panel;
+	}
+
+	private static Grid CreateAdvancedRow(string label, FrameworkElement content)
+	{
+		Grid row = new Grid
+		{
+			ColumnSpacing = 12,
+			ColumnDefinitions =
+			{
+				new ColumnDefinition { Width = GridLength.Auto },
+				new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+			}
+		};
+		row.Children.Add(new TextBlock
+		{
+			Text = label,
+			MinWidth = 96,
+			VerticalAlignment = VerticalAlignment.Center
+		});
+		row.Children.Add(content);
+		Grid.SetColumn(content, 1);
+		return row;
+	}
+
+	private static void ShowAdvancedConfigurationTip(FrameworkElement target)
+	{
+		StackPanel content = new StackPanel { Spacing = 4 };
+		content.Children.Add(new TextBlock
+		{
+			Text = "高级配置",
+			FontWeight = FontWeights.SemiBold
+		});
+		content.Children.Add(new TextBlock
+		{
+			Text = "仅推荐技术用户使用，一般用户请勿随意填写。请确保您的配置正确，否则隧道可能无法启动。",
+			TextWrapping = TextWrapping.Wrap,
+			MaxWidth = 320
+		});
+
+		Flyout flyout = new Flyout
+		{
+			Content = content,
+			Placement = FlyoutPlacementMode.Top
+		};
+		flyout.ShowAt(target);
+	}
+
+	private static FontFamily GetSymbolFontFamily()
+	{
+		return Application.Current.Resources.TryGetValue("AppSymbolFontFamily", out object resource)
+			&& resource is FontFamily fontFamily
+				? fontFamily
+				: new FontFamily("Segoe Fluent Icons");
 	}
 
 	private async Task FillFreeRemotePortAsync(
@@ -350,6 +555,11 @@ internal sealed class CreateTunnelForm
 	private readonly TextBox _sslCertPathInput;
 	private readonly TextBlock _sslKeyPathLabel;
 	private readonly TextBox _sslKeyPathInput;
+	private readonly RadioButton _tcpTransportRadio;
+	private readonly RadioButton _quicTransportRadio;
+	private readonly ComboBox _proxyProtocolBox;
+	private readonly ToggleSwitch _encryptionSwitch;
+	private readonly ToggleSwitch _compressionSwitch;
 
 	public CreateTunnelForm(
 		StackPanel root,
@@ -368,7 +578,12 @@ internal sealed class CreateTunnelForm
 		TextBlock sslCertPathLabel,
 		TextBox sslCertPathInput,
 		TextBlock sslKeyPathLabel,
-		TextBox sslKeyPathInput)
+		TextBox sslKeyPathInput,
+		RadioButton tcpTransportRadio,
+		RadioButton quicTransportRadio,
+		ComboBox proxyProtocolBox,
+		ToggleSwitch encryptionSwitch,
+		ToggleSwitch compressionSwitch)
 	{
 		Root = root;
 		_proxyNameBox = proxyNameBox;
@@ -387,6 +602,11 @@ internal sealed class CreateTunnelForm
 		_sslCertPathInput = sslCertPathInput;
 		_sslKeyPathLabel = sslKeyPathLabel;
 		_sslKeyPathInput = sslKeyPathInput;
+		_tcpTransportRadio = tcpTransportRadio;
+		_quicTransportRadio = quicTransportRadio;
+		_proxyProtocolBox = proxyProtocolBox;
+		_encryptionSwitch = encryptionSwitch;
+		_compressionSwitch = compressionSwitch;
 	}
 
 	public StackPanel Root { get; }
@@ -404,7 +624,11 @@ internal sealed class CreateTunnelForm
 			_protocolBox.SelectedItem?.ToString() ?? string.Empty,
 			_domainBox.Text ?? string.Empty,
 			_sslCertPathBox.Text ?? string.Empty,
-			_sslKeyPathBox.Text ?? string.Empty);
+			_sslKeyPathBox.Text ?? string.Empty,
+			GetTransportProtocol(),
+			GetProxyProtocolVersion(),
+			_encryptionSwitch.IsOn,
+			_compressionSwitch.IsOn);
 	}
 
 	public void ShowError(string message)
@@ -431,5 +655,15 @@ internal sealed class CreateTunnelForm
 		_sslCertPathInput.Visibility = isHttps ? Visibility.Visible : Visibility.Collapsed;
 		_sslKeyPathLabel.Visibility = isHttps ? Visibility.Visible : Visibility.Collapsed;
 		_sslKeyPathInput.Visibility = isHttps ? Visibility.Visible : Visibility.Collapsed;
+	}
+
+	private string GetTransportProtocol()
+	{
+		return _quicTransportRadio.IsChecked == true ? "quic" : "tcp";
+	}
+
+	private string GetProxyProtocolVersion()
+	{
+		return _proxyProtocolBox.SelectedItem is ComboBoxItem { Tag: string value } ? value : string.Empty;
 	}
 }

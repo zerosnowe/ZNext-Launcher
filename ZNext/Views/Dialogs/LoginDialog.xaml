@@ -19,9 +19,10 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto"
                   HorizontalScrollMode="Disabled"
                   VerticalScrollMode="Auto"
-                  MaxHeight="620">
-        <Border Width="372"
-                MaxWidth="520"
+                  MaxHeight="760"
+                  Padding="2,0,2,0">
+        <Border Width="500"
+                MaxWidth="500"
                 Padding="0,0,0,8">
             <StackPanel Spacing="14">
                 <StackPanel Spacing="4">
@@ -67,11 +68,34 @@
                                        FontWeight="SemiBold"
                                        VerticalAlignment="Center"/>
                             <Button Grid.Column="1"
+                                    x:Name="StartCaptchaButton"
                                     Content="开始验证"
                                     MinWidth="96"
                                     Height="32"
-                                    Command="{Binding OpenCaptchaCommand}"/>
+                                    Click="StartCaptchaButton_Click"/>
                         </Grid>
+
+                        <Border x:Name="CaptchaWebViewHost"
+                                Height="360"
+                                Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Visibility="Collapsed">
+                            <Grid>
+                                <WebView2 x:Name="CaptchaWebView"/>
+                                <Grid x:Name="CaptchaLoadingOverlay"
+                                      Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                                      Visibility="Collapsed">
+                                    <ProgressRing x:Name="CaptchaLoadingRing"
+                                                  Width="32"
+                                                  Height="32"
+                                                  IsActive="False"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
 
                         <TextBox x:Name="CaptchaInputTextBox"
                                  Header="验证码（支持粘贴 Base64 自动解码）"

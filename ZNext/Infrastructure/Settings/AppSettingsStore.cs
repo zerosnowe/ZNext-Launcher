@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Windows.Storage;
+using ZNext.Infrastructure.Serialization;
 
 namespace ZNext.Infrastructure.Settings;
 
@@ -150,7 +151,7 @@ internal sealed class AppSettingsStore : IAppSettingsStore
 			}
 
 			string json = File.ReadAllText(SettingsFilePath);
-			return JsonSerializer.Deserialize<Dictionary<string, string>>(json)
+			return JsonSerializer.Deserialize(json, AppJsonSerializerContext.Default.DictionaryStringString)
 				?? new Dictionary<string, string>(StringComparer.Ordinal);
 		}
 		catch (Exception ex)
@@ -170,10 +171,7 @@ internal sealed class AppSettingsStore : IAppSettingsStore
 				Directory.CreateDirectory(directory);
 			}
 
-			string json = JsonSerializer.Serialize(values, new JsonSerializerOptions
-			{
-				WriteIndented = true
-			});
+			string json = JsonSerializer.Serialize(values, AppJsonSerializerContext.Default.DictionaryStringString);
 			File.WriteAllText(SettingsFilePath, json);
 		}
 		catch (Exception ex)

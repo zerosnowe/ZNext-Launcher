@@ -12,7 +12,6 @@ internal static class ApplicationMetadata
 		{
 			Path.Combine(AppContext.BaseDirectory, "Assets", "ZNext.ico"),
 			Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "ZNext.ico"),
-			Path.Combine(Path.GetDirectoryName(typeof(ApplicationMetadata).Assembly.Location) ?? string.Empty, "Assets", "ZNext.ico"),
 			Path.Combine(Environment.CurrentDirectory, "Assets", "ZNext.ico")
 		};
 

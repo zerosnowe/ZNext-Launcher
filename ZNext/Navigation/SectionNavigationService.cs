@@ -10,10 +10,13 @@ internal sealed class SectionNavigationService : INavigationService
 	private readonly SectionProvider _sectionProvider;
 	private readonly SectionNavigationOptions _options;
 	private bool _isSynchronizingSelection;
+	private bool _isNavigatingBack;
+	private readonly Stack<string> _backStack = new Stack<string>();
 
 	public string? CurrentKey { get; private set; }
 
 	public bool IsSynchronizingSelection => _isSynchronizingSelection;
+	public bool CanGoBack => _backStack.Count > 0;
 
 	public IEnumerable<FrameworkElement> Sections => _sectionProvider.RegisteredSections.Values
 		.Where(section => section.IsCreated)
@@ -60,18 +63,58 @@ internal sealed class SectionNavigationService : INavigationService
 			return false;
 		}
 
+		if (string.Equals(CurrentKey, key, StringComparison.OrdinalIgnoreCase)
+			&& ReferenceEquals(_sectionHost.Children.FirstOrDefault(), descriptor.Section))
+		{
+			return true;
+		}
+
+		if (!_isNavigatingBack && IsRegisteredKey(CurrentKey))
+		{
+			_backStack.Push(CurrentKey!);
+		}
+
 		ShowRegisteredSection(descriptor);
 		CurrentKey = key;
+		_options.UpdateBackButton?.Invoke(CurrentKey);
 		return true;
 	}
 
 	public void ShowStandalone(FrameworkElement panel, string backButtonKey)
 	{
+		if (IsRegisteredKey(CurrentKey))
+		{
+			_backStack.Push(CurrentKey!);
+		}
+
 		_options.PrepareSectionHost?.Invoke(backButtonKey);
 		SwitchContent(panel);
 		_options.UpdateActivePageRoot?.Invoke(panel);
-		_options.UpdateBackButton?.Invoke(backButtonKey);
 		CurrentKey = backButtonKey;
+		_options.UpdateBackButton?.Invoke(CurrentKey);
+	}
+
+	public bool GoBack()
+	{
+		if (_backStack.Count == 0)
+		{
+			return false;
+		}
+
+		string targetKey = _backStack.Pop();
+		_isNavigatingBack = true;
+		try
+		{
+			return NavigateTo(targetKey);
+		}
+		finally
+		{
+			_isNavigatingBack = false;
+			if (CurrentKey != null)
+			{
+				_options.UpdateBackButton?.Invoke(CurrentKey);
+			}
+		}
 	}
 
 	public FrameworkElement? GetSection(string key)
@@ -81,6 +124,12 @@ internal sealed class SectionNavigationService : INavigationService
 
 	public NavigationViewItem? FindNavigationItem(string key)
 	{
+		if (string.Equals(key, "Settings", StringComparison.OrdinalIgnoreCase)
+			&& _navigationView.SettingsItem is NavigationViewItem settingsItem)
+		{
+			return settingsItem;
+		}
+
 		return FindNavigationItem(_navigationView.MenuItems, key)
 			?? FindNavigationItem(_navigationView.FooterMenuItems, key);
 	}
@@ -88,7 +137,6 @@ internal sealed class SectionNavigationService : INavigationService
 	private void ShowRegisteredSection(SectionDescriptor descriptor)
 	{
 		_options.PrepareSectionHost?.Invoke(descriptor.Key);
-		_options.UpdateBackButton?.Invoke(descriptor.Key);
 
 		FrameworkElement section = descriptor.Section;
 		SwitchContent(section);
@@ -96,9 +144,23 @@ internal sealed class SectionNavigationService : INavigationService
 		descriptor.OnNavigatedTo?.Invoke();
 	}
 
+	private bool IsRegisteredKey(string? key)
+	{
+		return !string.IsNullOrWhiteSpace(key)
+			&& _sectionProvider.RegisteredSections.ContainsKey(key);
+	}
+
 	private void SwitchContent(FrameworkElement section)
 	{
-		DetachFromParent(section);
+		if (ReferenceEquals(section.Parent, _sectionHost))
+		{
+			_sectionHost.Children.Remove(section);
+		}
+		else
+		{
+			DetachFromParent(section);
+		}
+
 		section.Visibility = Visibility.Visible;
 		_sectionHost.Children.Clear();
 		_sectionHost.Children.Add(section);

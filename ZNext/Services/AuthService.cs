@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ZNext.Infrastructure.Settings;
+using ZNext.Infrastructure.Serialization;
 
 namespace ZNext.Services
 {
@@ -119,14 +120,14 @@ namespace ZNext.Services
                 httpClient.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 
                 var normalizedCaptchaToken = NormalizeCaptchaToken(captchaToken);
-                var payload = new
+                var payload = new AuthLoginRequest
                 {
-                    username,
-                    password,
+                    username = username,
+                    password = password,
                     captchaToken = normalizedCaptchaToken
                 };
 
-                var jsonContent = JsonSerializer.Serialize(payload);
+                var jsonContent = JsonSerializer.Serialize(payload, AppJsonSerializerContext.Default.AuthLoginRequest);
                 using var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync(LoginApiUrl, content);
                 var responseContent = await response.Content.ReadAsStringAsync();

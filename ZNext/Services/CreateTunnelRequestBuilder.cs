@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using ZNext.Infrastructure.Serialization;
 
 namespace ZNext.Services;
 
@@ -11,6 +12,8 @@ internal sealed class CreateTunnelRequestBuilder
 		string proxyName = input.ProxyName.Trim();
 		string localIp = input.LocalIp.Trim();
 		string protocol = TunnelProtocolRules.Normalize(input.Protocol);
+		string transportProtocol = NormalizeTransportProtocol(input.TransportProtocol);
+		string proxyProtocolVersion = NormalizeProxyProtocolVersion(input.ProxyProtocolVersion);
 
 		if (string.IsNullOrWhiteSpace(proxyName))
 		{
@@ -48,18 +51,29 @@ internal sealed class CreateTunnelRequestBuilder
 			localIp = localIp,
 			localPort = input.LocalPort,
 			remotePort = isHttpLike ? 0 : input.RemotePort,
-			domain = isHttpLike ? JsonSerializer.Serialize(domains) : string.Empty,
+			domain = isHttpLike ? JsonSerializer.Serialize(domains, AppJsonSerializerContext.Default.ListString) : string.Empty,
 			proxyType = protocol,
 			httpPlugin = TunnelProtocolRules.GetHttpPlugin(protocol),
 			crtPath = protocol == "https" ? input.CertificatePath.Trim() : string.Empty,
 			keyPath = protocol == "https" ? input.KeyPath.Trim() : string.Empty,
-			transportProtocol = "tcp",
-			proxyProtocolVersion = string.Empty,
-			useEncryption = false,
-			useCompression = false,
+			transportProtocol = transportProtocol,
+			proxyProtocolVersion = proxyProtocolVersion,
+			useEncryption = input.UseEncryption,
+			useCompression = input.UseCompression,
 			requestHeaders = new Dictionary<string, string>(),
 			responseHeaders = new Dictionary<string, string>()
 		});
 	}
 
+	private static string NormalizeTransportProtocol(string value)
+	{
+		string normalized = (value ?? string.Empty).Trim().ToLowerInvariant();
+		return normalized == "quic" ? "quic" : "tcp";
+	}
+
+	private static string NormalizeProxyProtocolVersion(string value)
+	{
+		string normalized = (value ?? string.Empty).Trim().ToLowerInvariant();
+		return normalized is "v1" or "v2" ? normalized : string.Empty;
+	}
 }

@@ -3,10 +3,12 @@ using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
+using WinRT;
 
 namespace ZNext.ViewModels;
 
-public sealed class CreateTunnelNodeCard
+[GeneratedBindableCustomProperty]
+public sealed partial class CreateTunnelNodeCard
 {
 	private static readonly SolidColorBrush LoadBarHighBrush = new SolidColorBrush(Color.FromArgb(255, 220, 38, 38));
 	private static readonly SolidColorBrush LoadBarMediumBrush = new SolidColorBrush(Color.FromArgb(255, 245, 158, 11));

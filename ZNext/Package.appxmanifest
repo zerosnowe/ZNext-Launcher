@@ -7,13 +7,13 @@
   IgnorableNamespaces="uap rescap uap18">
 
   <Identity
-    Name="com.zerosnow.znext"
-    Publisher="CN=zerosnowe"
-    Version="1.0.0.0" />
+    Name="ZeroSnow.ZNextLauncher"
+    Publisher="CN=9803AFAF-7EB0-47F0-A928-D514E0766B2E"
+    Version="1.2.0.0" />
 
   <Properties>
-    <DisplayName>ZNext Launcher (Preview)</DisplayName>
-    <PublisherDisplayName>zerosnowe</PublisherDisplayName>
+    <DisplayName>ZNext Launcher</DisplayName>
+    <PublisherDisplayName>ZeroSnow</PublisherDisplayName>
     <Logo>Assets\StoreLogo.scale-200.png</Logo>
   </Properties>
 
@@ -29,7 +29,7 @@
     <Application
       Id="App"
       Executable="$targetnametoken$.exe"
-      EntryPoint="$targetentrypoint$" uap18:RuntimeBehavior="windowsApp">
+      EntryPoint="$targetentrypoint$" uap18:RuntimeBehavior="windowsApp" uap18:TrustLevel="appContainer">
       <uap:VisualElements
         DisplayName="ZNext Launcher"
         Description="ZNext Launcher"

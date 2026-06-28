@@ -93,14 +93,14 @@ internal sealed class WindowChromeCoordinator
 		}
 	}
 
-	public void UpdateBackButton(string? currentTag)
+	public void UpdateBackButton(bool canGoBack)
 	{
 		_titleBarVisualController.UpdateBackButton(
 			_backButton,
 			_backIcon,
 			MainAppWindow,
 			_contentProvider(),
-			currentTag);
+			canGoBack);
 	}
 
 	public void UpdateVisuals()

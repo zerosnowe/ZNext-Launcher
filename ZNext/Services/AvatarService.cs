@@ -7,7 +7,7 @@ using IOPath = System.IO.Path;
 
 namespace ZNext.Services;
 
-internal sealed class AvatarService
+public sealed class AvatarService
 {
 	private const string AvatarSettingKey = "TitleBarAvatarPath";
 	private const string AvatarFolderName = "Avatar";
@@ -31,11 +31,19 @@ internal sealed class AvatarService
 
 	public async Task<string> SaveAvatarAsync(StorageFile pickedFile)
 	{
-		StorageFolder avatarFolder = await ApplicationData.Current.LocalFolder.CreateFolderAsync(AvatarFolderName, CreationCollisionOption.OpenIfExists);
-		IReadOnlyList<StorageFile> existingFiles = await avatarFolder.GetFilesAsync();
+		StorageFolder avatarFolder = await ApplicationData.Current.LocalFolder
+			.CreateFolderAsync(AvatarFolderName, CreationCollisionOption.OpenIfExists)
+			.AsTask().ConfigureAwait(false);
+
+		IReadOnlyList<StorageFile> existingFiles = await avatarFolder
+			.GetFilesAsync()
+			.AsTask().ConfigureAwait(false);
+
 		foreach (StorageFile existingFile in existingFiles)
 		{
-			await existingFile.DeleteAsync(StorageDeleteOption.PermanentDelete);
+			await existingFile
+				.DeleteAsync(StorageDeleteOption.PermanentDelete)
+				.AsTask().ConfigureAwait(false);
 		}
 
 		string extension = IOPath.GetExtension(pickedFile.Name);
@@ -45,13 +53,40 @@ internal sealed class AvatarService
 		}
 
 		string avatarFileName = $"titlebar-avatar-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}{extension.ToLowerInvariant()}";
-		StorageFile savedFile = await pickedFile.CopyAsync(
-			avatarFolder,
-			avatarFileName,
-			NameCollisionOption.ReplaceExisting);
+		StorageFile savedFile = await pickedFile
+			.CopyAsync(avatarFolder, avatarFileName, NameCollisionOption.ReplaceExisting)
+			.AsTask().ConfigureAwait(false);
 
 		_settingsStore.SetString(AvatarSettingKey, savedFile.Path);
 		return savedFile.Path;
+	}
+
+	public async Task ClearAvatarAsync()
+	{
+		_settingsStore.Remove(AvatarSettingKey);
+
+		StorageFolder avatarFolder;
+		try
+		{
+			avatarFolder = await ApplicationData.Current.LocalFolder
+				.GetFolderAsync(AvatarFolderName)
+				.AsTask().ConfigureAwait(false);
+		}
+		catch
+		{
+			return;
+		}
+
+		IReadOnlyList<StorageFile> existingFiles = await avatarFolder
+			.GetFilesAsync()
+			.AsTask().ConfigureAwait(false);
+
+		foreach (StorageFile existingFile in existingFiles)
+		{
+			await existingFile
+				.DeleteAsync(StorageDeleteOption.PermanentDelete)
+				.AsTask().ConfigureAwait(false);
+		}
 	}
 
 }

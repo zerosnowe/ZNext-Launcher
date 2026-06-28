@@ -1,17 +1,15 @@
 using System;
-using System.Diagnostics;
-using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
-using ZNext.Infrastructure.Commands;
+using WinRT;
 using ZNext.Services;
 
 namespace ZNext.ViewModels.Dialogs;
 
-internal sealed class LoginDialogViewModel : ObservableObject
+[GeneratedBindableCustomProperty]
+internal sealed partial class LoginDialogViewModel : ObservableObject
 {
 	private static readonly SolidColorBrush SecondaryBrush = new SolidColorBrush(Color.FromArgb(255, 107, 114, 128));
 	private static readonly SolidColorBrush ErrorBrush = new SolidColorBrush(Color.FromArgb(255, 196, 43, 28));
@@ -29,7 +27,6 @@ internal sealed class LoginDialogViewModel : ObservableObject
 	public LoginDialogViewModel(AuthService authService)
 	{
 		_authService = authService;
-		OpenCaptchaCommand = new RelayCommand(OpenCaptchaInBrowser);
 		LoadRememberedLoginState();
 	}
 
@@ -129,8 +126,6 @@ internal sealed class LoginDialogViewModel : ObservableObject
 
 	public string? CaptchaToken => DecodeCaptchaToken(CaptchaInput);
 
-	public ICommand OpenCaptchaCommand { get; }
-
 	public async Task<bool> LoginAsync()
 	{
 		if (IsBusy)
@@ -191,6 +186,27 @@ internal sealed class LoginDialogViewModel : ObservableObject
 		CaptchaInput = captchaInput ?? string.Empty;
 	}
 
+	public void MarkCaptchaLoading()
+	{
+		CaptchaStatusText = "正在加载内嵌验证页面...";
+		CaptchaStatusBrush = SecondaryBrush;
+	}
+
+	public void MarkCaptchaReady()
+	{
+		if (string.IsNullOrWhiteSpace(CaptchaInput))
+		{
+			CaptchaStatusText = "请在内嵌页面完成验证，然后手动粘贴返回的 token。";
+			CaptchaStatusBrush = SecondaryBrush;
+		}
+	}
+
+	public void MarkCaptchaError(string message)
+	{
+		CaptchaStatusText = message;
+		CaptchaStatusBrush = ErrorBrush;
+	}
+
 	private void LoadRememberedLoginState()
 	{
 		RememberMe = _authService.LoadRememberLoginPreference();
@@ -198,25 +214,6 @@ internal sealed class LoginDialogViewModel : ObservableObject
 		if (!string.IsNullOrWhiteSpace(rememberedUsername))
 		{
 			Username = rememberedUsername;
-		}
-	}
-
-	private void OpenCaptchaInBrowser()
-	{
-		try
-		{
-			Process.Start(new ProcessStartInfo
-			{
-				FileName = "https://www.mefrp.com/3rdparty/captcha?client=ZNextWinUI3App",
-				UseShellExecute = true
-			});
-			CaptchaStatusText = "已在浏览器打开验证页，请完成验证并复制返回的 Base64 验证码。";
-			CaptchaStatusBrush = SecondaryBrush;
-		}
-		catch (Exception ex)
-		{
-			CaptchaStatusText = "打开验证页失败: " + ex.Message;
-			CaptchaStatusBrush = ErrorBrush;
 		}
 	}
 
@@ -251,28 +248,6 @@ internal sealed class LoginDialogViewModel : ObservableObject
 
 	internal static string? DecodeCaptchaToken(string? tokenText)
 	{
-		if (string.IsNullOrWhiteSpace(tokenText))
-		{
-			return null;
-		}
-
-		string token = tokenText.Trim();
-		try
-		{
-			byte[] bytes = Convert.FromBase64String(token);
-			string decoded = Encoding.UTF8.GetString(bytes).Trim();
-			if (!string.IsNullOrWhiteSpace(decoded))
-			{
-				token = decoded;
-			}
-		}
-		catch
-		{
-			// Raw token input is accepted.
-		}
-
-		string[] parts = token.Split(new[] { "||" }, StringSplitOptions.None);
-		string normalized = parts.Length > 0 ? parts[0].Trim() : token;
-		return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+		return CaptchaVerificationBridge.DecodeToken(tokenText);
 	}
 }

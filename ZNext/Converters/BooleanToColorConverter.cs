@@ -5,7 +5,7 @@ using System;
 
 namespace ZNext.Converters
 {
-    public class BooleanToColorConverter : IValueConverter
+    public partial class BooleanToColorConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

@@ -15,21 +15,44 @@
     d:DataContext="{d:DesignInstance Type=dialogs:SignCaptchaDialogViewModel}"
     mc:Ignorable="d">
 
-    <Border Width="372"
+    <Border Width="520"
             Padding="0,0,0,8">
         <StackPanel Spacing="14">
             <StackPanel Spacing="4">
                 <TextBlock Text="完成人机验证"
                            FontSize="20"
                            FontWeight="SemiBold"/>
-                <TextBlock Text="浏览器完成验证后，将返回的 token 粘贴到这里。"
+                <TextBlock Text="在内嵌页面完成验证后，将返回的 token 粘贴到这里。"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                            TextWrapping="Wrap"/>
             </StackPanel>
 
-            <Button Content="开始验证"
+            <Button x:Name="StartCaptchaButton"
+                    Content="开始验证"
                     HorizontalAlignment="Left"
-                    Command="{Binding OpenCaptchaCommand}"/>
+                    Click="StartCaptchaButton_Click"/>
+
+            <Border x:Name="CaptchaWebViewHost"
+                    Height="360"
+                    Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Visibility="Collapsed">
+                <Grid>
+                    <WebView2 x:Name="CaptchaWebView"/>
+                    <Grid x:Name="CaptchaLoadingOverlay"
+                          Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                          Visibility="Collapsed">
+                        <ProgressRing x:Name="CaptchaLoadingRing"
+                                      Width="32"
+                                      Height="32"
+                                      IsActive="False"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                    </Grid>
+                </Grid>
+            </Border>
 
             <TextBox Header="验证码 token（支持 Base64 自动解码）"
                      PlaceholderText="粘贴验证码 token"

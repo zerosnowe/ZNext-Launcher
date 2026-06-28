@@ -1,8 +1,10 @@
 using ZNext.Services;
+using WinRT;
 
 namespace ZNext.ViewModels;
 
-internal sealed class CreateTunnelSectionViewModel : ObservableObject
+[GeneratedBindableCustomProperty]
+internal sealed partial class CreateTunnelSectionViewModel : ObservableObject
 {
 	private readonly CreateTunnelNodeQueryService _queryService;
 	private readonly List<CreateTunnelNodeCard> _nodes = new();

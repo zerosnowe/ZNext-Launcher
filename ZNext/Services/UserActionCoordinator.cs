@@ -55,6 +55,24 @@ internal sealed class UserActionCoordinator
 		}
 	}
 
+	public UserActionResult CopyAccessToken(string? token)
+	{
+		if (string.IsNullOrWhiteSpace(token))
+		{
+			return UserActionResult.Dialog("复制失败", "当前未登录或访问密钥为空。");
+		}
+
+		try
+		{
+			_clipboardService.SetText(token);
+			return UserActionResult.Dialog("已复制", "访问密钥已复制到剪贴板。");
+		}
+		catch (Exception ex)
+		{
+			return UserActionResult.Dialog("复制失败", ex.Message);
+		}
+	}
+
 	public UserActionResult OpenFrpcDirectory()
 	{
 		try

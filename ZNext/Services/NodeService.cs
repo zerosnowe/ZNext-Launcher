@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using WinRT;
+using ZNext.Infrastructure.Serialization;
 
 namespace ZNext.Services
 {
@@ -53,12 +55,7 @@ namespace ZNext.Services
                     };
                 }
 
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
-
-                var apiResponse = JsonSerializer.Deserialize<NodeApiResponse>(responseContent, options);
+                var apiResponse = JsonSerializer.Deserialize(responseContent, AppJsonSerializerContext.Default.NodeApiResponse);
                 if (apiResponse == null)
                 {
                     return new NodeListResult
@@ -115,12 +112,7 @@ namespace ZNext.Services
                     };
                 }
 
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
-
-                var apiResponse = JsonSerializer.Deserialize<StatusApiResponse>(responseContent, options);
+                var apiResponse = JsonSerializer.Deserialize(responseContent, AppJsonSerializerContext.Default.StatusApiResponse);
                 if (apiResponse == null)
                 {
                     return new NodeStatusResult
@@ -325,7 +317,8 @@ namespace ZNext.Services
         public List<NodeStatus>? Statuses { get; set; }
     }
 
-    public class NodeInfo
+    [GeneratedBindableCustomProperty]
+    public partial class NodeInfo
     {
         public int NodeId { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -348,7 +341,8 @@ namespace ZNext.Services
         public string Version { get; set; } = string.Empty;
     }
 
-    public class NodeStatus
+    [GeneratedBindableCustomProperty]
+    public partial class NodeStatus
     {
         public int NodeId { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -363,7 +357,8 @@ namespace ZNext.Services
         public int LoadPercent { get; set; }
     }
 
-    public class NodeInfoWithStatus
+    [GeneratedBindableCustomProperty]
+    public partial class NodeInfoWithStatus
     {
         public NodeInfo NodeInfo { get; set; } = new NodeInfo();
         public NodeStatus? NodeStatus { get; set; }

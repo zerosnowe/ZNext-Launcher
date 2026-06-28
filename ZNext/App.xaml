@@ -12,6 +12,8 @@
 
             <FontFamily x:Key="AppSymbolFontFamily">Segoe Fluent Icons</FontFamily>
             <FontFamily x:Key="SymbolThemeFontFamily">Segoe Fluent Icons</FontFamily>
+            <FontFamily x:Key="ContentControlThemeFontFamily">Microsoft YaHei UI</FontFamily>
+            <FontFamily x:Key="TextControlThemeFontFamily">Microsoft YaHei UI</FontFamily>
             
             <converters:BooleanToColorConverter x:Key="BooleanToColorConverter"/>
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>

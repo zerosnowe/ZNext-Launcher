@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using ZNext.ViewModels;
+using ZNext.Views;
 
 namespace ZNext.Services;
 
@@ -19,10 +20,7 @@ internal sealed class HomeSectionCoordinator
 	private readonly Func<PersonPicture?> _homeAvatarPictureProvider;
 	private readonly Func<Border?> _homeAvatarFallbackProvider;
 	private readonly Func<RichTextBlock?> _importantAnnouncementBodyProvider;
-	private readonly Func<Button?> _loginButtonProvider;
-	private readonly Func<Button?> _logoutButtonProvider;
-	private readonly Func<TextBlock?> _titleBarUsernameProvider;
-	private readonly Func<TextBlock?> _titleBarEmailProvider;
+	private readonly Func<ProfileControl?> _profileControlProvider;
 	private readonly Func<FrameworkElement?> _startupOverlayProvider;
 	private readonly Func<ProgressRing?> _startupRingProvider;
 	private readonly Func<Image?> _startupIconProvider;
@@ -42,10 +40,7 @@ internal sealed class HomeSectionCoordinator
 		Func<PersonPicture?> homeAvatarPictureProvider,
 		Func<Border?> homeAvatarFallbackProvider,
 		Func<RichTextBlock?> importantAnnouncementBodyProvider,
-		Func<Button?> loginButtonProvider,
-		Func<Button?> logoutButtonProvider,
-		Func<TextBlock?> titleBarUsernameProvider,
-		Func<TextBlock?> titleBarEmailProvider,
+		Func<ProfileControl?> profileControlProvider,
 		Func<FrameworkElement?> startupOverlayProvider,
 		Func<ProgressRing?> startupRingProvider,
 		Func<Image?> startupIconProvider)
@@ -62,10 +57,7 @@ internal sealed class HomeSectionCoordinator
 		_homeAvatarPictureProvider = homeAvatarPictureProvider;
 		_homeAvatarFallbackProvider = homeAvatarFallbackProvider;
 		_importantAnnouncementBodyProvider = importantAnnouncementBodyProvider;
-		_loginButtonProvider = loginButtonProvider;
-		_logoutButtonProvider = logoutButtonProvider;
-		_titleBarUsernameProvider = titleBarUsernameProvider;
-		_titleBarEmailProvider = titleBarEmailProvider;
+		_profileControlProvider = profileControlProvider;
 		_startupOverlayProvider = startupOverlayProvider;
 		_startupRingProvider = startupRingProvider;
 		_startupIconProvider = startupIconProvider;
@@ -125,19 +117,7 @@ internal sealed class HomeSectionCoordinator
 	public void ApplySignedInTokenState()
 	{
 		_viewModel.ApplySignedInTokenState();
-		TextBlock? usernameText = _titleBarUsernameProvider();
-		if (usernameText != null)
-		{
-			usernameText.Text = "已登录";
-		}
-
-		TextBlock? emailText = _titleBarEmailProvider();
-		if (emailText != null)
-		{
-			emailText.Text = "正在获取账户信息";
-		}
-
-		UpdateButtonVisibility(isLoggedIn: true);
+		_profileControlProvider()?.SetProfileText("已登录", "正在获取账户信息");
 	}
 
 	public void ApplySignedOutState()
@@ -216,19 +196,6 @@ internal sealed class HomeSectionCoordinator
 		ApplySystemStatusLoadResult(await _dataCoordinator.LoadSystemStatusAsync());
 	}
 
-	public void UpdateButtonVisibility(bool isLoggedIn)
-	{
-		Button? loginButton = _loginButtonProvider();
-		Button? logoutButton = _logoutButtonProvider();
-		if (loginButton == null || logoutButton == null)
-		{
-			return;
-		}
-
-		loginButton.Visibility = isLoggedIn ? Visibility.Collapsed : Visibility.Visible;
-		logoutButton.Visibility = Visibility.Collapsed;
-	}
-
 	private void ApplyHomeUserInfoLoadResult(HomeUserInfoLoadResult result)
 	{
 		if (result.CachedUser != null)
@@ -241,28 +208,13 @@ internal sealed class HomeSectionCoordinator
 			UpdateUserInfoDisplay(result.RemoteUser);
 		}
 
-		if (result.ShouldMarkLoggedIn)
-		{
-			UpdateButtonVisibility(isLoggedIn: true);
-		}
 	}
 
 	private void UpdateUserInfoDisplay(UserInfoData user)
 	{
 		string username = string.IsNullOrWhiteSpace(user.Username) ? "未设置" : user.Username;
 		_viewModel.ApplyUser(user);
-
-		TextBlock? usernameText = _titleBarUsernameProvider();
-		if (usernameText != null)
-		{
-			usernameText.Text = username;
-		}
-
-		TextBlock? emailText = _titleBarEmailProvider();
-		if (emailText != null)
-		{
-			emailText.Text = string.IsNullOrWhiteSpace(user.Email) ? "未设置" : user.Email;
-		}
+		_profileControlProvider()?.SetProfileText(username, string.IsNullOrWhiteSpace(user.Email) ? "未设置" : user.Email);
 
 		_userProfileSettingsService.SaveUserGroup(user.Group);
 		RefreshHomeBannerAvatar();
@@ -271,21 +223,9 @@ internal sealed class HomeSectionCoordinator
 	private void ApplyLogoutState()
 	{
 		_viewModel.ResetForLogout();
-
-		TextBlock? usernameText = _titleBarUsernameProvider();
-		if (usernameText != null)
-		{
-			usernameText.Text = "未登录";
-		}
-
-		TextBlock? emailText = _titleBarEmailProvider();
-		if (emailText != null)
-		{
-			emailText.Text = "-";
-		}
+		_profileControlProvider()?.SetProfileText("未登录", "-");
 
 		RefreshHomeBannerAvatar();
-		UpdateButtonVisibility(isLoggedIn: false);
 	}
 
 	private string RenderImportantAnnouncementMarkdown(string markdown)

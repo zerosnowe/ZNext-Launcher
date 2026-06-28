@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ZNext.Infrastructure.Serialization;
 
 namespace ZNext.Services
 {
@@ -56,12 +57,7 @@ namespace ZNext.Services
                     return $"ERROR: HTTP {(int)response.StatusCode}";
                 }
 
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
-
-                var result = JsonSerializer.Deserialize<ApiResponse>(responseContent, options);
+                var result = JsonSerializer.Deserialize(responseContent, AppJsonSerializerContext.Default.ApiResponse);
                 if (result == null)
                 {
                     return "ERROR: invalid response";
@@ -121,12 +117,7 @@ namespace ZNext.Services
                     return $"ERROR: HTTP {(int)response.StatusCode}";
                 }
 
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
-
-                var result = JsonSerializer.Deserialize<ApiResponse>(responseContent, options);
+                var result = JsonSerializer.Deserialize(responseContent, AppJsonSerializerContext.Default.ApiResponse);
                 if (result == null)
                 {
                     return "ERROR: invalid response";

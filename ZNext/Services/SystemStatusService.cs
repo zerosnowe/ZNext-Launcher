@@ -1,6 +1,7 @@
 using System;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ZNext.Infrastructure.Serialization;
 
 namespace ZNext.Services
 {
@@ -45,11 +46,7 @@ namespace ZNext.Services
                     };
                 }
 
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
-                var apiResponse = JsonSerializer.Deserialize<SystemStatusApiResponse>(responseContent, options);
+                var apiResponse = JsonSerializer.Deserialize(responseContent, AppJsonSerializerContext.Default.SystemStatusApiResponse);
 
                 if (apiResponse == null || apiResponse.Data == null)
                 {

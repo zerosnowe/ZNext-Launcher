@@ -4,13 +4,17 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using ZNext.Infrastructure.Serialization;
 
 namespace ZNext.Services;
 
 internal sealed class LauncherUpdateService
 {
 	private const string LauncherUpdateApiBaseUrl = "https://alist.yealqp.cn";
-	private const string LauncherUpdateListPath = "/ZNext Launcher/x64";
+	private const string LauncherUpdateListPath = "/ZNext Launcher/重构测试版（✅主线维护）";
+	private const string LauncherUpdatePublicSourceUrl = "https://alist.yealqp.cn/mefrp-desktop/ZNext%20Launcher/%E9%87%8D%E6%9E%84%E6%B5%8B%E8%AF%95%E7%89%88%EF%BC%88%E2%9C%85%E4%B8%BB%E7%BA%BF%E7%BB%B4%E6%8A%A4%EF%BC%89";
+
+	internal static string PublicSourceUrl => LauncherUpdatePublicSourceUrl;
 
 	public async Task<LauncherUpdateResult> GetLatestLauncherZipUrlAsync()
 	{
@@ -21,21 +25,21 @@ internal sealed class LauncherUpdateService
 				Timeout = TimeSpan.FromSeconds(20)
 			};
 
-			string listPayload = JsonSerializer.Serialize(new
+			string listPayload = JsonSerializer.Serialize(new LauncherUpdateListRequest
 			{
 				path = LauncherUpdateListPath,
 				password = string.Empty,
 				page = 1,
 				per_page = 200,
 				refresh = false
-			});
+			}, AppJsonSerializerContext.Default.LauncherUpdateListRequest);
 
 			using StringContent listContent = new StringContent(listPayload, Encoding.UTF8, "application/json");
 			using HttpResponseMessage listResponse = await client.PostAsync(LauncherUpdateApiBaseUrl + "/api/fs/list", listContent);
 			string listBody = await listResponse.Content.ReadAsStringAsync();
 			if (!listResponse.IsSuccessStatusCode)
 			{
-				return LauncherUpdateResult.Failed($"请求文件列表失败: HTTP {(int)listResponse.StatusCode}");
+				return LauncherUpdateResult.FallbackToSource($"请求文件列表失败: HTTP {(int)listResponse.StatusCode}");
 			}
 
 			using JsonDocument listDoc = JsonDocument.Parse(listBody);
@@ -43,14 +47,14 @@ internal sealed class LauncherUpdateService
 			int code = TryGetInt(listRoot, "code");
 			if (code != 200)
 			{
-				return LauncherUpdateResult.Failed(TryGetString(listRoot, "message") ?? "文件列表获取失败");
+				return LauncherUpdateResult.FallbackToSource(TryGetString(listRoot, "message") ?? "文件列表获取失败");
 			}
 
 			if (!TryGetPropertyIgnoreCase(listRoot, "data", out JsonElement dataElement)
 				|| !TryGetPropertyIgnoreCase(dataElement, "content", out JsonElement contentElement)
 				|| contentElement.ValueKind != JsonValueKind.Array)
 			{
-				return LauncherUpdateResult.Failed("返回数据缺少文件列表");
+				return LauncherUpdateResult.FallbackToSource("返回数据缺少文件列表");
 			}
 
 			JsonElement? bestFile = null;
@@ -92,50 +96,50 @@ internal sealed class LauncherUpdateService
 
 			if (!bestFile.HasValue)
 			{
-				return LauncherUpdateResult.Failed("未找到可用的 zip 更新包");
+				return LauncherUpdateResult.FallbackToSource("未找到可用的 zip 更新包");
 			}
 
 			string fileName = TryGetString(bestFile.Value, "name") ?? string.Empty;
 			string filePath = LauncherUpdateListPath.TrimEnd('/') + "/" + fileName;
 
-			string getPayload = JsonSerializer.Serialize(new
+			string getPayload = JsonSerializer.Serialize(new LauncherUpdateGetRequest
 			{
 				path = filePath,
 				password = string.Empty
-			});
+			}, AppJsonSerializerContext.Default.LauncherUpdateGetRequest);
 
 			using StringContent getContent = new StringContent(getPayload, Encoding.UTF8, "application/json");
 			using HttpResponseMessage getResponse = await client.PostAsync(LauncherUpdateApiBaseUrl + "/api/fs/get", getContent);
 			string getBody = await getResponse.Content.ReadAsStringAsync();
 			if (!getResponse.IsSuccessStatusCode)
 			{
-				return LauncherUpdateResult.Failed($"获取下载链接失败: HTTP {(int)getResponse.StatusCode}", bestVersion);
+				return LauncherUpdateResult.FallbackToSource($"获取下载链接失败: HTTP {(int)getResponse.StatusCode}", bestVersion);
 			}
 
 			using JsonDocument getDoc = JsonDocument.Parse(getBody);
 			JsonElement getRoot = getDoc.RootElement;
 			if (TryGetInt(getRoot, "code") != 200)
 			{
-				return LauncherUpdateResult.Failed(TryGetString(getRoot, "message") ?? "获取下载链接失败", bestVersion);
+				return LauncherUpdateResult.FallbackToSource(TryGetString(getRoot, "message") ?? "获取下载链接失败", bestVersion);
 			}
 
 			if (!TryGetPropertyIgnoreCase(getRoot, "data", out JsonElement getData)
 				|| !TryGetPropertyIgnoreCase(getData, "raw_url", out JsonElement rawUrlElement))
 			{
-				return LauncherUpdateResult.Failed("返回数据中缺少 raw_url", bestVersion);
+				return LauncherUpdateResult.FallbackToSource("返回数据中缺少 raw_url", bestVersion);
 			}
 
 			string? rawUrl = rawUrlElement.ValueKind == JsonValueKind.String ? rawUrlElement.GetString() : null;
 			if (string.IsNullOrWhiteSpace(rawUrl))
 			{
-				return LauncherUpdateResult.Failed("下载链接为空", bestVersion);
+				return LauncherUpdateResult.FallbackToSource("下载链接为空", bestVersion);
 			}
 
 			return new LauncherUpdateResult(true, rawUrl, bestVersion, "success");
 		}
 		catch (Exception ex)
 		{
-			return LauncherUpdateResult.Failed("获取更新异常: " + ex.Message);
+			return LauncherUpdateResult.FallbackToSource("获取更新异常: " + ex.Message);
 		}
 	}
 
@@ -203,5 +207,10 @@ internal sealed record LauncherUpdateResult(bool Success, string? Url, Version? 
 	public static LauncherUpdateResult Failed(string message, Version? latestVersion = null)
 	{
 		return new LauncherUpdateResult(false, null, latestVersion, message);
+	}
+
+	public static LauncherUpdateResult FallbackToSource(string message, Version? latestVersion = null)
+	{
+		return new LauncherUpdateResult(true, LauncherUpdateService.PublicSourceUrl, null, message);
 	}
 }

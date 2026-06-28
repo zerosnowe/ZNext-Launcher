@@ -2,82 +2,84 @@ using System;
 using System.IO;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Media;
 
 namespace ZNext.Services;
 
-internal sealed class AvatarVisualController
+public sealed class AvatarVisualController
 {
-	public void RefreshHomeAvatar(PersonPicture? avatarPicture, Border? fallback, string? avatarPath)
+	private int _homeAvatarRequestVersion;
+	private string? _lastHomeAvatarRenderKey;
+
+	public async void RefreshHomeAvatar(PersonPicture? avatarPicture, Border? fallback, string? avatarPath)
 	{
 		if (avatarPicture == null || fallback == null)
 		{
 			return;
 		}
 
-		if (HasAvatar(avatarPath))
+		int requestVersion = ++_homeAvatarRequestVersion;
+		string? avatarRenderKey = GetAvatarRenderKey(avatarPath);
+		if (avatarRenderKey == null)
 		{
-			avatarPicture.ProfilePicture = new BitmapImage(new Uri(avatarPath!, UriKind.Absolute));
-			avatarPicture.Visibility = Visibility.Visible;
-			fallback.Visibility = Visibility.Collapsed;
+			if (!string.Equals(_lastHomeAvatarRenderKey, "none", StringComparison.Ordinal)
+				|| avatarPicture.Visibility == Visibility.Visible)
+			{
+				ClearHomeAvatar(avatarPicture, fallback);
+			}
+
+			_lastHomeAvatarRenderKey = "none";
 			return;
 		}
 
-		avatarPicture.ProfilePicture = null;
-		avatarPicture.Visibility = Visibility.Collapsed;
-		fallback.Visibility = Visibility.Visible;
-	}
+		if (string.Equals(_lastHomeAvatarRenderKey, avatarRenderKey, StringComparison.Ordinal)
+			&& avatarPicture.ProfilePicture != null)
+		{
+			return;
+		}
 
-	public void RefreshTitleBarAvatar(
-		PersonPicture? avatarPicture,
-		FontIcon? userGlyph,
-		PersonPicture? flyoutAvatarPicture,
-		Border? flyoutGlyphHost,
-		TextBlock? avatarStatusText,
-		string? avatarPath)
-	{
+		_lastHomeAvatarRenderKey = avatarRenderKey;
 		try
 		{
-			if (HasAvatar(avatarPath) && avatarPicture != null && userGlyph != null)
+			if (HasAvatar(avatarPath))
 			{
-				BitmapImage bitmapImage = new BitmapImage
+				ImageSource? avatarImage = await DpiAwareImageSourceFactory.CreateSquareThumbnailAsync(avatarPath!, avatarPicture, 72);
+				if (requestVersion != _homeAvatarRequestVersion)
 				{
-					DecodePixelType = DecodePixelType.Logical,
-					DecodePixelWidth = 160,
-					DecodePixelHeight = 160,
-					UriSource = new Uri(avatarPath!, UriKind.Absolute)
-				};
+					return;
+				}
+				if (avatarImage == null)
+				{
+					ClearHomeAvatar(avatarPicture, fallback);
+					return;
+				}
 
 				avatarPicture.ProfilePicture = null;
-				avatarPicture.ProfilePicture = bitmapImage;
+				avatarPicture.ProfilePicture = avatarImage;
 				avatarPicture.Visibility = Visibility.Visible;
-				userGlyph.Visibility = Visibility.Collapsed;
-
-				if (flyoutAvatarPicture != null)
-				{
-					flyoutAvatarPicture.ProfilePicture = null;
-					flyoutAvatarPicture.ProfilePicture = bitmapImage;
-					flyoutAvatarPicture.Visibility = Visibility.Visible;
-				}
-
-				if (flyoutGlyphHost != null)
-				{
-					flyoutGlyphHost.Visibility = Visibility.Collapsed;
-				}
-
-				if (avatarStatusText != null)
-				{
-					avatarStatusText.Text = "已设置";
-				}
-
+				fallback.Visibility = Visibility.Collapsed;
 				return;
 			}
 		}
 		catch
 		{
+			// Silently handle exceptions to prevent unhandled error dialog
+			if (requestVersion == _homeAvatarRequestVersion)
+			{
+				_lastHomeAvatarRenderKey = null;
+				ClearHomeAvatar(avatarPicture, fallback);
+			}
+			return;
 		}
 
-		ClearTitleBarAvatar(avatarPicture, userGlyph, flyoutAvatarPicture, flyoutGlyphHost, avatarStatusText);
+		ClearHomeAvatar(avatarPicture, fallback);
+	}
+
+	private static void ClearHomeAvatar(PersonPicture avatarPicture, Border fallback)
+	{
+		avatarPicture.ProfilePicture = null;
+		avatarPicture.Visibility = Visibility.Collapsed;
+		fallback.Visibility = Visibility.Visible;
 	}
 
 	private static bool HasAvatar(string? avatarPath)
@@ -85,38 +87,14 @@ internal sealed class AvatarVisualController
 		return !string.IsNullOrWhiteSpace(avatarPath) && File.Exists(avatarPath);
 	}
 
-	private static void ClearTitleBarAvatar(
-		PersonPicture? avatarPicture,
-		FontIcon? userGlyph,
-		PersonPicture? flyoutAvatarPicture,
-		Border? flyoutGlyphHost,
-		TextBlock? avatarStatusText)
+	private static string? GetAvatarRenderKey(string? avatarPath)
 	{
-		if (avatarPicture != null)
+		if (!HasAvatar(avatarPath))
 		{
-			avatarPicture.ProfilePicture = null;
-			avatarPicture.Visibility = Visibility.Collapsed;
+			return null;
 		}
 
-		if (userGlyph != null)
-		{
-			userGlyph.Visibility = Visibility.Visible;
-		}
-
-		if (flyoutAvatarPicture != null)
-		{
-			flyoutAvatarPicture.ProfilePicture = null;
-			flyoutAvatarPicture.Visibility = Visibility.Collapsed;
-		}
-
-		if (flyoutGlyphHost != null)
-		{
-			flyoutGlyphHost.Visibility = Visibility.Visible;
-		}
-
-		if (avatarStatusText != null)
-		{
-			avatarStatusText.Text = "未设置";
-		}
+		FileInfo fileInfo = new FileInfo(avatarPath!);
+		return $"{fileInfo.FullName}:{fileInfo.LastWriteTimeUtc.Ticks}:{fileInfo.Length}";
 	}
 }

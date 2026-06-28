@@ -64,6 +64,11 @@ internal sealed class SettingsOperationCoordinator
 		return ToOperationResult(await _avatarSettingsCoordinator.PickAndSaveAsync(ownerHwnd));
 	}
 
+	public async Task<SettingsOperationResult> ClearAvatarAsync()
+	{
+		return ToOperationResult(await _avatarSettingsCoordinator.ClearAsync());
+	}
+
 	private static SettingsOperationResult ToOperationResult(AvatarSettingsActionResult result)
 	{
 		if (result.WasCancelled)

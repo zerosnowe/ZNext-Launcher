@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ZNext.Infrastructure.Serialization;
 
 namespace ZNext.Services
 {
@@ -79,8 +80,10 @@ namespace ZNext.Services
                     };
                 }
 
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var data = JsonSerializer.Deserialize<CreateProxyDataDto>(dataElement.GetRawText(), options) ?? new CreateProxyDataDto();
+                var data = JsonSerializer.Deserialize(
+                    dataElement.GetRawText(),
+                    AppJsonSerializerContext.Default.CreateProxyDataDto)
+                    ?? new CreateProxyDataDto();
                 return new CreateProxyDataResult
                 {
                     Success = true,
@@ -108,7 +111,9 @@ namespace ZNext.Services
 
             try
             {
-                var payload = JsonSerializer.Serialize(new { nodeId, protocol });
+                var payload = JsonSerializer.Serialize(
+                    new FreeNodePortRequest { nodeId = nodeId, protocol = protocol },
+                    AppJsonSerializerContext.Default.FreeNodePortRequest);
                 using var content = new StringContent(payload, Encoding.UTF8, "application/json");
                 using var response = await _httpService.PostAsync($"{BaseApiUrl}/auth/node/freePort", content);
                 var body = await response.Content.ReadAsStringAsync();
@@ -164,7 +169,7 @@ namespace ZNext.Services
 
             try
             {
-                var payload = JsonSerializer.Serialize(request);
+                var payload = JsonSerializer.Serialize(request, AppJsonSerializerContext.Default.CreateProxyRequest);
                 using var content = new StringContent(payload, Encoding.UTF8, "application/json");
                 using var response = await _httpService.PostAsync($"{BaseApiUrl}/auth/proxy/create", content);
                 var body = await response.Content.ReadAsStringAsync();

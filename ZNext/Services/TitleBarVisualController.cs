@@ -13,14 +13,13 @@ internal sealed class TitleBarVisualController
 		FontIcon? backIcon,
 		AppWindow? appWindow,
 		FrameworkElement? root,
-		string? currentTag)
+		bool canGoBack)
 	{
 		if (backButton == null)
 		{
 			return;
 		}
 
-		bool canGoBack = !string.Equals(currentTag, "Home", StringComparison.OrdinalIgnoreCase);
 		backButton.Visibility = Visibility.Visible;
 		backButton.IsEnabled = canGoBack;
 		backButton.Opacity = canGoBack ? 1.0 : 0.45;

@@ -8,6 +8,7 @@ internal sealed class HomeInteractionCoordinator
 	private readonly Func<LoginDialogFlowService> _loginDialogFlowProvider;
 	private readonly UserSessionOperationCoordinator _userSessionOperationCoordinator;
 	private readonly HomeSectionCoordinator _homeSectionCoordinator;
+	private readonly UserDialogService _userDialogService;
 	private readonly AnnouncementInteractionCoordinator _announcementInteractionCoordinator;
 	private readonly PageLoadStateCoordinator _pageLoadStateCoordinator;
 	private readonly HomeActivationCoordinator _homeActivationCoordinator;
@@ -19,6 +20,7 @@ internal sealed class HomeInteractionCoordinator
 		Func<LoginDialogFlowService> loginDialogFlowProvider,
 		UserSessionOperationCoordinator userSessionOperationCoordinator,
 		HomeSectionCoordinator homeSectionCoordinator,
+		UserDialogService userDialogService,
 		AnnouncementInteractionCoordinator announcementInteractionCoordinator,
 		PageLoadStateCoordinator pageLoadStateCoordinator,
 		HomeActivationCoordinator homeActivationCoordinator,
@@ -29,6 +31,7 @@ internal sealed class HomeInteractionCoordinator
 		_loginDialogFlowProvider = loginDialogFlowProvider;
 		_userSessionOperationCoordinator = userSessionOperationCoordinator;
 		_homeSectionCoordinator = homeSectionCoordinator;
+		_userDialogService = userDialogService;
 		_announcementInteractionCoordinator = announcementInteractionCoordinator;
 		_pageLoadStateCoordinator = pageLoadStateCoordinator;
 		_homeActivationCoordinator = homeActivationCoordinator;
@@ -63,6 +66,11 @@ internal sealed class HomeInteractionCoordinator
 
 	public async Task LogoutAsync()
 	{
+		if (!await _userDialogService.ShowConfirmAsync("退出登录", "确定要退出当前账户吗？"))
+		{
+			return;
+		}
+
 		await _homeSectionCoordinator.ApplyUserSessionOperationResultAsync(await _userSessionOperationCoordinator.LogoutAsync());
 	}
 

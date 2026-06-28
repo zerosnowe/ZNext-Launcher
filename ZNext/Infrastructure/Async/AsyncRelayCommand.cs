@@ -25,7 +25,14 @@ internal sealed class AsyncRelayCommand : ICommand
 
 	public async void Execute(object? parameter)
 	{
-		await ExecuteAsync();
+		try
+		{
+			await ExecuteAsync();
+		}
+		catch
+		{
+			// Prevent unhandled exception in async void
+		}
 	}
 
 	public async Task ExecuteAsync()

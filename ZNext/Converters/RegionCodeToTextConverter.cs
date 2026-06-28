@@ -3,7 +3,7 @@ using System;
 
 namespace ZNext.Converters
 {
-    public class RegionCodeToTextConverter : IValueConverter
+    public partial class RegionCodeToTextConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

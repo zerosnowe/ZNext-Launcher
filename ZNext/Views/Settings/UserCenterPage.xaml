@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ZNext.Views.Settings.UserCenterPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:views="using:ZNext.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Background="Transparent"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Border x:Name="RootBorder"
+                Margin="30,0,30,24">
+            <StackPanel MaxWidth="1000"
+                        HorizontalAlignment="Stretch"
+                        Spacing="4">
+                <Grid ColumnDefinitions="Auto,*,Auto"
+                      Padding="0,12"
+                      Margin="0,0,0,8">
+                    <Viewbox Width="72"
+                             Height="72">
+                        <views:ProfileControl x:Name="UserCenterProfileControl"
+                                              IsProfileFlyoutEnabled="False"/>
+                    </Viewbox>
+
+                    <StackPanel Grid.Column="1"
+                                Margin="14,0,0,0"
+                                VerticalAlignment="Center"
+                                Spacing="2">
+                        <TextBlock Text="{x:Bind HomeViewModel.UsernameText, Mode=OneWay}"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{x:Bind HomeViewModel.EmailText, Mode=OneWay}"
+                                   FontSize="13"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{x:Bind HomeViewModel.UserIdText, Mode=OneWay}"
+                                   FontSize="13"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <Border Grid.Column="2"
+                            Background="{x:Bind HomeViewModel.RealnameBadgeBackground, Mode=OneWay}"
+                            CornerRadius="10"
+                            Padding="10,4"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind HomeViewModel.RealnameText, Mode=OneWay}"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   Foreground="{x:Bind HomeViewModel.RealnameTextForeground, Mode=OneWay}"/>
+                    </Border>
+                </Grid>
+
+                <controls:SettingsExpander Header="用户信息"
+                                           Description="账户资料与身份状态"
+                                           IsExpanded="True">
+                    <controls:SettingsExpander.HeaderIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE77B;"/>
+                    </controls:SettingsExpander.HeaderIcon>
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard Header="用户名">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE13D;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <TextBlock Text="{x:Bind HomeViewModel.UsernameText, Mode=OneWay}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="用户 ID">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE8A9;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <Border Background="#FEF3C7"
+                                    CornerRadius="10"
+                                    Padding="8,2">
+                                <TextBlock Text="{x:Bind HomeViewModel.UserIdText, Mode=OneWay}"
+                                           Foreground="#B45309"
+                                           FontWeight="SemiBold"/>
+                            </Border>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="注册邮箱">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE715;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <TextBlock Text="{x:Bind HomeViewModel.EmailText, Mode=OneWay}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="用户组">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE902;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <TextBlock Text="{x:Bind HomeViewModel.LevelText, Mode=OneWay}"
+                                       FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="注册时间">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE823;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <TextBlock Text="{x:Bind HomeViewModel.RegTimeText, Mode=OneWay}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+
+                <controls:SettingsExpander Header="资源配额"
+                                           Description="隧道、流量与带宽信息"
+                                           IsExpanded="True">
+                    <controls:SettingsExpander.HeaderIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE9D2;"/>
+                    </controls:SettingsExpander.HeaderIcon>
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard Header="隧道数量">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE71D;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <TextBlock Text="{x:Bind HomeViewModel.ProxyCountText, Mode=OneWay}"
+                                       FontWeight="SemiBold"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="剩余流量">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE9D9;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <TextBlock Text="{x:Bind HomeViewModel.TrafficText, Mode=OneWay}"
+                                       FontWeight="SemiBold"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="入站带宽">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE898;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <TextBlock Text="{x:Bind HomeViewModel.InBoundText, Mode=OneWay}"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="出站带宽">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE899;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <TextBlock Text="{x:Bind HomeViewModel.OutBoundText, Mode=OneWay}"/>
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+
+                <controls:SettingsExpander Header="更多功能"
+                                           Description="兑换、域名与访问密钥"
+                                           IsExpanded="True">
+                    <controls:SettingsExpander.HeaderIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xECAA;"/>
+                    </controls:SettingsExpander.HeaderIcon>
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard Header="使用兑换码"
+                                               Description="CDK 兑换">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE8EC;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <Button Content="打开"
+                                    MinWidth="96"
+                                    Tag="RedeemCode"
+                                    Click="UserCenterActionButton_Click"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="兑换历史"
+                                               Description="查看 CDK 使用记录">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE81C;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <Button Content="打开"
+                                    MinWidth="96"
+                                    Tag="CdkHistory"
+                                    Click="UserCenterActionButton_Click"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="域名白名单"
+                                               Description="管理 HTTP/HTTPS 隧道域名">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE774;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <Button Content="打开"
+                                    MinWidth="96"
+                                    Tag="DomainWhitelist"
+                                    Click="UserCenterActionButton_Click"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="复制访问密钥"
+                                               Description="复制当前账户 Token">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE8C8;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <Button Content="复制"
+                                    MinWidth="96"
+                                    Click="CopyAccessTokenButton_Click"/>
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+
+                <controls:SettingsExpander Header="账户安全"
+                                           Description="审计、密码与密钥管理"
+                                           IsExpanded="True">
+                    <controls:SettingsExpander.HeaderIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE72E;"/>
+                    </controls:SettingsExpander.HeaderIcon>
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard Header="审计日志"
+                                               Description="查看近期操作记录">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE9D5;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <Button Content="查看"
+                                    MinWidth="96"
+                                    Tag="AuditLogs"
+                                    Click="UserCenterActionButton_Click"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="下线全部隧道"
+                                               Description="强制下线账户名下所有隧道">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE7E8;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <Button Content="打开"
+                                    MinWidth="96"
+                                    Tag="KickAllProxies"
+                                    Click="UserCenterActionButton_Click"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="账户密码"
+                                               Description="更改密码或找回密码">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE72E;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="8">
+                                <Button Content="更改密码"
+                                        MinWidth="96"
+                                        Tag="ChangePassword"
+                                        Click="UserCenterActionButton_Click"/>
+                                <Button Content="找回密码"
+                                        MinWidth="96"
+                                        Tag="ForgotPassword"
+                                        Click="UserCenterActionButton_Click"/>
+                            </StackPanel>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="重置访问密钥"
+                                               Description="重置后原访问密钥失效">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE72C;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <Button Content="打开"
+                                    MinWidth="96"
+                                    Tag="ResetAccessToken"
+                                    Click="UserCenterActionButton_Click"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="机器人绑定密钥"
+                                               Description="管理机器人绑定凭据">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE99A;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <Button Content="打开"
+                                    MinWidth="96"
+                                    Tag="RobotBindingKey"
+                                    Click="UserCenterActionButton_Click"/>
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+
+                <controls:SettingsExpander Header="状态"
+                                           Description="签到与系统状态"
+                                           IsExpanded="True">
+                    <controls:SettingsExpander.HeaderIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE930;"/>
+                    </controls:SettingsExpander.HeaderIcon>
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard Header="今日签到">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="&#xE8FB;"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <TextBlock Text="{x:Bind HomeViewModel.TodaySignedText, Mode=OneWay}"
+                                       FontWeight="SemiBold"/>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard Header="系统状态"
+                                               Description="{x:Bind HomeViewModel.SystemStatusRemark, Mode=OneWay}">
+                            <controls:SettingsCard.HeaderIcon>
+                                <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                          Glyph="{x:Bind HomeViewModel.SystemStatusIconGlyph, Mode=OneWay}"
+                                          Foreground="{x:Bind HomeViewModel.SystemStatusBrush, Mode=OneWay}"/>
+                            </controls:SettingsCard.HeaderIcon>
+                            <TextBlock Text="{x:Bind HomeViewModel.SystemStatusTitle, Mode=OneWay}"
+                                       Foreground="{x:Bind HomeViewModel.SystemStatusBrush, Mode=OneWay}"
+                                       FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+            </StackPanel>
+        </Border>
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="LayoutVisualStates">
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="641"/>
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="NarrowLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="RootBorder.Margin" Value="20,0,20,20"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+    </ScrollViewer>
+</Page>

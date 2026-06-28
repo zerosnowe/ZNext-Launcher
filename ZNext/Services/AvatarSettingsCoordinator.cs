@@ -5,9 +5,11 @@ namespace ZNext.Services;
 
 internal sealed class AvatarSettingsCoordinator
 {
+	private readonly AvatarService _avatarService;
 	private readonly AvatarPickerService _avatarPickerService;
 	public AvatarSettingsCoordinator(AvatarService avatarService)
 	{
+		_avatarService = avatarService;
 		_avatarPickerService = new AvatarPickerService(avatarService);
 	}
 
@@ -23,6 +25,19 @@ internal sealed class AvatarSettingsCoordinator
 		catch (Exception ex)
 		{
 			return AvatarSettingsActionResult.Failure("上传头像失败", ex.Message);
+		}
+	}
+
+	public async Task<AvatarSettingsActionResult> ClearAsync()
+	{
+		try
+		{
+			await _avatarService.ClearAvatarAsync();
+			return AvatarSettingsActionResult.Success("头像已清除");
+		}
+		catch (Exception ex)
+		{
+			return AvatarSettingsActionResult.Failure("清除头像失败", ex.Message);
 		}
 	}
 

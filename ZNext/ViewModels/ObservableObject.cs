@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace ZNext.ViewModels;
 
-internal abstract class ObservableObject : INotifyPropertyChanged
+public abstract partial class ObservableObject : INotifyPropertyChanged
 {
 	public event PropertyChangedEventHandler? PropertyChanged;
 

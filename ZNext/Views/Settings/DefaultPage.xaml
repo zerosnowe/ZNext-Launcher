@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ZNext.Views.Settings.DefaultPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:views="using:ZNext.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Background="Transparent"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Border x:Name="RootBorder"
+                Margin="30,0,30,24">
+            <StackPanel MaxWidth="1000"
+                        HorizontalAlignment="Stretch"
+                        Spacing="4">
+                <Grid ColumnDefinitions="Auto,*,Auto"
+                      Padding="0,12"
+                      Margin="0,0,0,8">
+                    <Viewbox Width="72"
+                             Height="72">
+                        <views:ProfileControl x:Name="SettingsProfileControl"
+                                              IsProfileFlyoutEnabled="False"
+                                              ProfileClicked="SettingsProfileControl_ProfileClicked"/>
+                    </Viewbox>
+
+                    <StackPanel Grid.Column="1"
+                                Margin="14,0,0,0"
+                                VerticalAlignment="Center"
+                                Spacing="2">
+                        <TextBlock Text="{x:Bind HomeViewModel.UsernameText, Mode=OneWay}"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{x:Bind HomeViewModel.EmailText, Mode=OneWay}"
+                                   FontSize="13"
+                                   FontWeight="Light"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <Button x:Name="SettingsLogoutButton"
+                            Grid.Column="2"
+                            Padding="16,8"
+                            Background="#EF4444"
+                            BorderBrush="#B91C1C"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            FontSize="14"
+                            Foreground="White"
+                            VerticalAlignment="Center"
+                            Click="SettingsLogoutButton_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE750;"
+                                      FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                      FontSize="14"/>
+                            <TextBlock Text="退出登录"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <controls:SettingsCard Header="{x:Bind GeneralTitle, Mode=OneWay}"
+                                       Description="{x:Bind GeneralDescription, Mode=OneWay}"
+                                       IsClickEnabled="True"
+                                       Tag="General"
+                                       Tapped="SettingsCard_Tapped">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE771;"/>
+                    </controls:SettingsCard.HeaderIcon>
+                    <controls:SettingsCard.ActionIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE974;"/>
+                    </controls:SettingsCard.ActionIcon>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Header="{x:Bind StartupTitle, Mode=OneWay}"
+                                       Description="{x:Bind StartupDescription, Mode=OneWay}"
+                                       IsClickEnabled="True"
+                                       Tag="Startup"
+                                       Tapped="SettingsCard_Tapped">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE7E8;"/>
+                    </controls:SettingsCard.HeaderIcon>
+                    <controls:SettingsCard.ActionIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE974;"/>
+                    </controls:SettingsCard.ActionIcon>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Header="{x:Bind CoreTitle, Mode=OneWay}"
+                                       Description="{x:Bind CoreDescription, Mode=OneWay}"
+                                       IsClickEnabled="True"
+                                       Tag="Core"
+                                       Tapped="SettingsCard_Tapped">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE835;"/>
+                    </controls:SettingsCard.HeaderIcon>
+                    <controls:SettingsCard.ActionIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE974;"/>
+                    </controls:SettingsCard.ActionIcon>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Header="{x:Bind SecurityTitle, Mode=OneWay}"
+                                       Description="{x:Bind SecurityDescription, Mode=OneWay}"
+                                       IsClickEnabled="True"
+                                       Tag="Security"
+                                       Tapped="SettingsCard_Tapped">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE83D;"/>
+                    </controls:SettingsCard.HeaderIcon>
+                    <controls:SettingsCard.ActionIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE974;"/>
+                    </controls:SettingsCard.ActionIcon>
+                </controls:SettingsCard>
+
+                <TextBlock Margin="12,10,0,2"
+                           Text="关于"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                <controls:SettingsCard Header="{x:Bind AboutTitle, Mode=OneWay}"
+                                       Description="{x:Bind AboutDescription, Mode=OneWay}"
+                                       IsClickEnabled="True"
+                                       Tag="About"
+                                       Tapped="SettingsCard_Tapped">
+                    <controls:SettingsCard.HeaderIcon>
+                        <ImageIcon Source="ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-48.png"/>
+                    </controls:SettingsCard.HeaderIcon>
+                    <controls:SettingsCard.ActionIcon>
+                        <FontIcon FontFamily="{ThemeResource AppSymbolFontFamily}"
+                                  Glyph="&#xE974;"/>
+                    </controls:SettingsCard.ActionIcon>
+                    <TextBlock VerticalAlignment="Center"
+                               Text="{Binding AboutVersionText}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Style="{ThemeResource CaptionTextBlockStyle}"/>
+                </controls:SettingsCard>
+            </StackPanel>
+        </Border>
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="LayoutVisualStates">
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="641"/>
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="NarrowLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="RootBorder.Margin" Value="20,0,20,20"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+    </ScrollViewer>
+</Page>

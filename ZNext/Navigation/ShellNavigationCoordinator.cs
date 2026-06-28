@@ -44,6 +44,7 @@ internal sealed class ShellNavigationCoordinator
 	}
 
 	public string? CurrentKey => _navigationService.CurrentKey;
+	public bool CanGoBack => _navigationService.CanGoBack;
 
 	public FrameworkElement? ActivePageRootElement { get; private set; }
 
@@ -51,6 +52,12 @@ internal sealed class ShellNavigationCoordinator
 	{
 		if (_navigationService.IsSynchronizingSelection)
 		{
+			return;
+		}
+
+		if (args.IsSettingsSelected)
+		{
+			NavigateTo("Settings", fromSelectionChanged: true);
 			return;
 		}
 
@@ -68,6 +75,11 @@ internal sealed class ShellNavigationCoordinator
 	public bool Select(string tag)
 	{
 		return _navigationService.NavigateTo(tag);
+	}
+
+	public bool GoBack()
+	{
+		return _navigationService.GoBack();
 	}
 
 	public void ShowStandalone(FrameworkElement panel, string backButtonKey)

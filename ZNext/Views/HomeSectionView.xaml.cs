@@ -13,8 +13,6 @@ public sealed partial class HomeSectionView : UserControl
 	public event RoutedEventHandler? AnnouncementRequested;
 	public event RoutedEventHandler? SignInRequested;
 	public event RoutedEventHandler? CloseImportantAnnouncementRequested;
-	public event RoutedEventHandler? LoginRequested;
-	public event RoutedEventHandler? LogoutRequested;
 
 	private void HomeBannerAnnouncementButton_Click(object sender, RoutedEventArgs e)
 	{
@@ -36,13 +34,4 @@ public sealed partial class HomeSectionView : UserControl
 		SignInRequested?.Invoke(sender, e);
 	}
 
-	private void LoginButton_Click(object sender, RoutedEventArgs e)
-	{
-		LoginRequested?.Invoke(sender, e);
-	}
-
-	private void LogoutButton_Click(object sender, RoutedEventArgs e)
-	{
-		LogoutRequested?.Invoke(sender, e);
-	}
 }

@@ -3,7 +3,7 @@ using System;
 
 namespace ZNext.Converters
 {
-    public class BytesToMBConverter : IValueConverter
+    public partial class BytesToMBConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

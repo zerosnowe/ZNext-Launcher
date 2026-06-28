@@ -1,8 +1,10 @@
 using ZNext.Services;
+using WinRT;
 
 namespace ZNext.ViewModels;
 
-internal sealed class NodeSectionViewModel : ObservableObject
+[GeneratedBindableCustomProperty]
+internal sealed partial class NodeSectionViewModel : ObservableObject
 {
 	private readonly NodeListQueryService _queryService;
 	private readonly List<NodeInfoWithStatus> _nodes = new();

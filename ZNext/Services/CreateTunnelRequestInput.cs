@@ -11,4 +11,8 @@ internal sealed record CreateTunnelRequestInput(
 	string Protocol,
 	string DomainsText,
 	string CertificatePath,
-	string KeyPath);
+	string KeyPath,
+	string TransportProtocol,
+	string ProxyProtocolVersion,
+	bool UseEncryption,
+	bool UseCompression);

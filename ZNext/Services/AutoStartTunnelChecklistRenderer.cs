@@ -1,14 +1,15 @@
 using System.Collections.Generic;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using CommunityToolkit.WinUI.Controls;
 
 namespace ZNext.Services;
 
 internal sealed class AutoStartTunnelChecklistRenderer
 {
-	public void RenderMessage(StackPanel? panel, TextBlock? statusText, string message)
+	public void RenderMessage(SettingsExpander? expander, TextBlock? statusText, string message)
 	{
-		panel?.Children.Clear();
+		expander?.Items.Clear();
 
 		if (statusText != null)
 		{
@@ -17,30 +18,37 @@ internal sealed class AutoStartTunnelChecklistRenderer
 	}
 
 	public void RenderItems(
-		StackPanel? panel,
+		SettingsExpander? expander,
 		TextBlock? statusText,
 		IReadOnlyList<AutoStartTunnelChecklistItem> items,
 		RoutedEventHandler selectionChanged)
 	{
-		if (panel == null || statusText == null)
+		if (expander == null || statusText == null)
 		{
 			return;
 		}
 
-		panel.Children.Clear();
+		expander.Items.Clear();
 		foreach (AutoStartTunnelChecklistItem item in items)
 		{
-			CheckBox checkBox = new CheckBox
+			ToggleSwitch toggle = new ToggleSwitch
 			{
-				Content = item.Label,
 				Tag = item.Id,
-				IsChecked = item.IsChecked
+				IsOn = item.IsChecked,
+				OffContent = "关闭",
+				OnContent = "开启"
 			};
-			checkBox.Checked += selectionChanged;
-			checkBox.Unchecked += selectionChanged;
-			panel.Children.Add(checkBox);
+			toggle.Toggled += selectionChanged;
+
+			SettingsCard card = new SettingsCard
+			{
+				Header = item.Label,
+				Content = toggle
+			};
+
+			expander.Items.Add(card);
 		}
 
-		statusText.Text = $"已加载 {items.Count} 条隧道。";
+		statusText.Text = items.Count > 0 ? string.Empty : "暂无隧道";
 	}
 }
